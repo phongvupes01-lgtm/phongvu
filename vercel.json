@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/sinhvien", "destination": "/index.html?page=student" },
+    { "source": "/sv", "destination": "/index.html?page=student" }
+  ]
+}
