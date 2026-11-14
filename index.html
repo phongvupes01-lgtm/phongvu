@@ -11049,6 +11049,11 @@ var wb = XLSX.utils.book_new();
         <div class="row g-3 mb-3 align-items-end">
           <div class="col-12 col-md-5">
             <label class="form-label fw-bold small">1. Chọn Giảng viên</label>
+            <div class="input-group input-group-sm mb-1">
+              <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
+              <input type="text" id="stsGvSearch" class="form-control" placeholder="Gõ tên hoặc tài khoản GV để tìm nhanh..." oninput="stsFilterGvList()" onkeydown="if(event.key==='Enter'){event.preventDefault();stsPickFirstFilteredGv();}">
+              <button type="button" class="btn btn-outline-secondary" onclick="stsClearGvSearch()" title="Xóa tìm kiếm"><i class="fas fa-times"></i></button>
+            </div>
             <select id="stsGvSelect" class="form-select" onchange="loadSmartTeacherOptions()"></select>
           </div>
           <div class="col-6 col-md-3">
@@ -11123,8 +11128,11 @@ var wb = XLSX.utils.book_new();
 
 <script>
 (function(){
-  var stsState = { assignments: [], busySlots: {}, plan: [], deleteItems: [] };
+  var stsState = { gvList: [], assignments: [], busySlots: {}, plan: [], deleteItems: [] };
   function escT(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function normSearchVN(s){
+    return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[đĐ]/g, 'd').toLowerCase().trim();
+  }
 
   function getMondayIso(dateStr){
     if (typeof snapToMonday === 'function') return snapToMonday(dateStr);
@@ -11141,6 +11149,56 @@ var wb = XLSX.utils.book_new();
     var pad = function(x){ return String(x).padStart(2, '0'); };
     return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
   }
+
+  var stsSearchTimer = null;
+  window.stsRenderGvSelect = function(list, query){
+    var sel = document.getElementById('stsGvSelect');
+    if (!sel) return;
+    var q = normSearchVN(query);
+    var filtered = (list || []).filter(function(g){
+      if (!q) return true;
+      return normSearchVN(g.name + ' ' + g.user).indexOf(q) !== -1;
+    });
+    var prevVal = sel.value;
+    if (!filtered.length) {
+      sel.innerHTML = '<option value="">-- Không tìm thấy GV phù hợp --</option>';
+      return false;
+    }
+    sel.innerHTML = filtered.map(function(g){
+      return '<option value="' + escT(g.user) + '">' + escT(g.name) + ' (' + escT(g.user) + ')</option>';
+    }).join('');
+    if (prevVal && filtered.some(function(g){ return g.user === prevVal; })) {
+      sel.value = prevVal;
+    }
+    return sel.value !== prevVal;
+  };
+
+  window.stsFilterGvList = function(){
+    var inp = document.getElementById('stsGvSearch');
+    var q = inp ? inp.value : '';
+    var changed = window.stsRenderGvSelect(stsState.gvList, q);
+    clearTimeout(stsSearchTimer);
+    if (changed) {
+      var sel = document.getElementById('stsGvSelect');
+      if (sel && sel.value) {
+        stsSearchTimer = setTimeout(function(){ window.loadSmartTeacherOptions(); }, 250);
+      }
+    }
+  };
+
+  window.stsPickFirstFilteredGv = function(){
+    clearTimeout(stsSearchTimer);
+    var sel = document.getElementById('stsGvSelect');
+    if (sel && sel.value) window.loadSmartTeacherOptions();
+  };
+
+  window.stsClearGvSearch = function(){
+    var inp = document.getElementById('stsGvSearch');
+    if (inp) inp.value = '';
+    var changed = window.stsRenderGvSelect(stsState.gvList, '');
+    if (changed) window.loadSmartTeacherOptions();
+    if (inp) inp.focus();
+  };
 
   window.openSmartTeacherScheduleModal = function(){
     var wEl = document.getElementById('stsWeekInput');
@@ -11169,10 +11227,11 @@ var wb = XLSX.utils.book_new();
             if (box) box.innerHTML = '<div class="alert alert-danger py-2">' + escT((res && res.message) || 'Lỗi tải dữ liệu') + '</div>';
             return;
           }
+          if (res.gvList && res.gvList.length) {
+            stsState.gvList = res.gvList;
+          }
           if (sel && sel.options.length === 0) {
-            sel.innerHTML = (res.gvList || []).map(function(g){
-              return '<option value="' + escT(g.user) + '">' + escT(g.name) + ' (' + escT(g.user) + ')</option>';
-            }).join('');
+            window.stsRenderGvSelect(stsState.gvList, '');
           }
           stsState.assignments = Array.isArray(res.assignments) ? res.assignments : [];
           stsState.busySlots = res.busySlots || {};
