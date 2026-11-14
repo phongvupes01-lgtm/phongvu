@@ -15,18 +15,37 @@
 
       if (hasNativeGAS && !hasCustomUrl) return;
 
+      function getCurrentActor_() {
+        try {
+          var u = (typeof currentUser !== "undefined" && currentUser) ? currentUser : (localStorage.getItem("lms_user") || "");
+          var r = (typeof userRole !== "undefined" && userRole) ? userRole : (localStorage.getItem("lms_role") || "");
+          var nEl = document.getElementById("uName");
+          var n = (nEl && nEl.innerText && nEl.innerText !== "User") ? nEl.innerText : (localStorage.getItem("lms_name") || u);
+          return { user: String(u || ""), name: String(n || u || ""), role: String(r || "") };
+        } catch (e) {
+          return { user: "", name: "", role: "" };
+        }
+      }
+
       function callGasApi(funcName, args, attempt) {
         attempt = attempt || 1;
+        var actorObj = getCurrentActor_();
         return fetch(GAS_API_URL, {
           method: "POST",
           mode: "cors",
           redirect: "follow",
           headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify({ func: funcName, args: args })
+          body: JSON.stringify({ func: funcName, args: args, actor: actorObj })
         })
         .then(function(response) {
           if (!response.ok) throw new Error("HTTP " + response.status);
-          return response.json();
+          return response.text().then(function(txt) {
+            var t = (txt || "").trim();
+            if (!t || t.charAt(0) === "<") {
+              throw new Error("Máy chủ trả về HTML thay vì JSON (kiểm tra lại link GAS_API_URL hoặc quyền 'Bất kỳ ai' khi Deploy).");
+            }
+            return JSON.parse(t);
+          });
         })
         .catch(function(err) {
           // Tự động thử lại tối đa 2 lần nếu mạng chập chờn
@@ -61,6 +80,11 @@
               callGasApi(prop, args, 1)
                 .then(function(res) {
                   if (res && res.status === "success") {
+                    if (res.actionId && prop !== "undoActivityAction") {
+                      window.__lastActionId = res.actionId;
+                      window.__lastActionFunc = prop;
+                      if (typeof window.updateQuickUndoBtn === "function") window.updateQuickUndoBtn();
+                    }
                     if (typeof successHandler === "function") successHandler(res.data, userObject);
                   } else {
                     var errObj = new Error((res && res.message) ? res.message : "Lỗi xử lý từ máy chủ Google Sheet");
@@ -1828,7 +1852,14 @@ body.v8-off .v8-offbar{display:block}
         <button class="btn-toggle-sidebar" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
         <h1 class="topbar-title" id="topbarTitle"><i class="fas fa-clipboard-check text-primary"></i> Điểm danh Sinh viên</h1>
       </div>
-      <div class="d-flex gap-3 align-items-center">
+      <div class="d-flex gap-2 align-items-center">
+        <!-- Hoàn tác nhanh & Lịch sử hoạt động -->
+        <button class="btn btn-outline-warning btn-sm" id="btnQuickUndo" onclick="quickUndoLastAction()" style="display:none;" title="Lui lại thao tác vừa thực hiện">
+          <i class="fas fa-undo-alt"></i> <span class="d-none d-lg-inline">Lui lại</span>
+        </button>
+        <button class="btn btn-outline-secondary btn-sm" id="btnActivityHistory" onclick="openActivityHistoryModal()" style="display:none;" title="Xem lịch sử thao tác & hoàn tác">
+          <i class="fas fa-history"></i> <span class="d-none d-md-inline">Lịch sử</span>
+        </button>
         <!-- Nút đồng bộ (Admin) -->
         <button class="btn btn-outline-primary btn-sm" id="btnSyncHeader" onclick="clearCacheWeb()" style="display:none;">
           <i class="fas fa-sync-alt"></i> <span class="d-none d-md-inline">Đồng bộ</span>
@@ -2067,6 +2098,7 @@ body.v8-off .v8-offbar{display:block}
               <button class="btn btn-outline-secondary btn-sm ms-auto" onclick="exportTKBMatrixExcel()"><i class="fas fa-file-excel"></i> Xuất Excel</button>
               <button class="btn btn-outline-secondary btn-sm" onclick="copyScheduleToNextWeekWeb()"><i class="fas fa-copy"></i> Copy sang tuần sau</button>
               <button class="btn btn-success btn-sm ms-2" onclick="openBaoGiangModal()"><i class="fas fa-envelope"></i> Gửi Báo Giảng</button>
+              <button class="btn btn-primary btn-sm ms-2 fw-bold" onclick="openSmartTeacherScheduleModal()"><i class="fas fa-magic me-1"></i> Xếp lịch Thông minh theo GV</button>
             </div>
             
             <div id="adminMatrixWrapper" class="matrix-wrapper" style="overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 10px;">
@@ -2113,6 +2145,7 @@ body.v8-off .v8-offbar{display:block}
                     <li><a class="dropdown-item py-2 fw-bold text-warning" href="#" onclick="openAutoReminderModal()"><i class="fas fa-bell me-2"></i> ⏰ Quản lý Nhắc việc & Gửi Email</a></li>
                     <li><hr class="dropdown-divider"></li>
                     <li><a class="dropdown-item py-2 fw-bold text-primary" href="#" data-bs-toggle="modal" data-bs-target="#modalPhanCong"><i class="fas fa-plus-circle me-2"></i> Phân công mới</a></li>
+                    <li><a class="dropdown-item py-2 fw-bold text-info" href="#" onclick="openSubjectManagerModal()"><i class="fas fa-book-medical me-2"></i> Quản lý Tên Môn học (Thêm / Xóa)</a></li>
                   <li><a class="dropdown-item py-2 fw-bold" style="color: #8b5cf6;" href="#" data-bs-toggle="modal" data-bs-target="#modalLopGhep"><i class="fas fa-object-group me-2"></i> Tổ chức Lớp Ghép</a></li>
                   <li><a class="dropdown-item py-2 fw-bold text-warning" href="#" onclick="quickEditMergedGroup()"><i class="fas fa-edit me-2"></i> Sửa Nhóm SV Lớp Ghép</a></li>
                   <li><hr class="dropdown-divider"></li>
@@ -2120,6 +2153,7 @@ body.v8-off .v8-offbar{display:block}
                   <li><hr class="dropdown-divider"></li>
                   <li><a class="dropdown-item py-2 text-secondary fw-bold" href="#" data-bs-toggle="modal" data-bs-target="#modalHocLai"><i class="fas fa-redo me-2"></i> Ghép SV học lại</a></li>
                   <li><a class="dropdown-item py-2 text-secondary fw-bold" href="#" data-bs-toggle="modal" data-bs-target="#modalBoSung"><i class="fas fa-user-plus me-2"></i> Bổ sung SV trễ</a></li>
+                  <li><a class="dropdown-item py-2 fw-bold text-success" style="background:#ecfdf5;" href="#" onclick="openSmartStudentHubModal()"><i class="fas fa-user-shield me-2"></i> 🛡️ Cập nhật SV Thông minh / Điền Nhóm</a></li>
                   <li><hr class="dropdown-divider"></li>
                   <li><a class="dropdown-item py-2 fw-bold text-primary" href="#" onclick="freezeAllExistingAssignmentsWeb()"><i class="fas fa-camera me-2"></i> Chốt DS các môn hiện có (DS_MON)</a></li>
                   <li><a class="dropdown-item py-2 fw-bold text-danger" href="#" onclick="backfillUnpaidIntoMergedGroupsWeb()"><i class="fas fa-calendar-check me-2"></i> Bổ sung SV nợ phí vào Lớp ghép cũ</a></li>
@@ -2451,7 +2485,12 @@ body.v8-off .v8-offbar{display:block}
         </div>
 
         <div class="mb-3">
-  <label class="form-label">Môn học</label>
+  <div class="d-flex justify-content-between align-items-center mb-1">
+    <label class="form-label mb-0">Môn học</label>
+    <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size:0.78rem;" onclick="openSubjectManagerModal()">
+      <i class="fas fa-book-medical me-1"></i>Thêm / Xóa môn
+    </button>
+  </div>
   <input type="text" id="searchAdminSelMon" class="form-control mb-2" placeholder="🔍 Tìm môn học..." onkeyup="filterSelect('searchAdminSelMon', 'adminSelMon')">
   <select id="adminSelMon" class="form-select"></select>
 </div>
@@ -2554,7 +2593,20 @@ body.v8-off .v8-offbar{display:block}
               Sau đó Paste (Ctrl+V) vào ô bên dưới.
             </div>
             <textarea id="bulkPasteArea" class="form-control mb-2" rows="5" placeholder="Dán dữ liệu từ Excel vào đây..."></textarea>
-            <button class="btn btn-secondary w-100 mb-3" onclick="previewBulkStudents()"><i class="fas fa-search"></i> Kiểm tra dữ liệu</button>
+            <div class="d-flex gap-2 mb-3">
+              <button class="btn btn-secondary flex-fill" onclick="previewBulkStudents()"><i class="fas fa-search"></i> Kiểm tra nhanh</button>
+              <button class="btn btn-primary flex-fill fw-bold" onclick="previewSmartStudentImportWeb()"><i class="fas fa-brain me-1"></i> Phân tích Thông minh (4 cấp độ)</button>
+            </div>
+            <div id="smartImportOptions" class="p-2 mb-2 rounded bg-light border small" style="display:none;">
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" id="chkSmartRule30" checked>
+                <label class="form-check-label fw-semibold" for="chkSmartRule30">Xét điều kiện 30% buổi học (SV trễ)</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" id="chkSmartSyncOpen" checked>
+                <label class="form-check-label fw-semibold" for="chkSmartSyncOpen">Đồng bộ nhóm sang các môn đang mở</label>
+              </div>
+            </div>
             
             <div id="bulkPreviewArea" style="display:none;">
               <h6 class="fw-bold text-primary">Kết quả kiểm tra:</h6>
@@ -3374,46 +3426,7 @@ function openStudentPortal() {
 // =========================================================
 // LOGIC CỔNG SINH VIÊN (HỖ TRỢ 2 CHẾ ĐỘ: MSSV VÀ LỚP)
 // =========================================================
-function toggleSearchMode() {
-  var mode = document.querySelector('input[name="searchMode"]:checked').value;
-  if (mode === 'MSSV') {
-    document.getElementById('searchMssvArea').style.display = 'flex';
-    document.getElementById('searchLopArea').style.display = 'none';
-    document.getElementById('studentWelcomeMsg').style.display = 'none';
-  } else {
-    document.getElementById('searchMssvArea').style.display = 'none';
-    document.getElementById('searchLopArea').style.display = 'flex';
-    document.getElementById('studentWelcomeMsg').style.display = 'none';
-    
-    // Tải danh sách lớp nếu chưa có
-    var selLop = document.getElementById('studentSearchLopInput');
-    if (selLop.options.length <= 1) {
-       google.script.run.withSuccessHandler(function(list) {
-          selLop.innerHTML = '<option value="">-- Chọn lớp --</option>' + list.map(function(l) { return '<option value="'+l+'">'+l+'</option>'; }).join('');
-       }).getLopListForStudent();
-    }
-  }
-}
 
-function triggerStudentSearch() {
-  var mode = document.querySelector('input[name="searchMode"]:checked').value;
-  
-  if (mode === 'MSSV') {
-    var mssv = document.getElementById('studentSearchMssvInput').value.trim();
-    if (!mssv) return Swal.fire('Lưu ý', 'Vui lòng nhập MSSV của bạn!', 'warning');
-    localStorage.setItem('student_mssv', mssv);
-  } else {
-    var lop = document.getElementById('studentSearchLopInput').value;
-    if (!lop) return Swal.fire('Lưu ý', 'Vui lòng chọn Lớp!', 'warning');
-    localStorage.setItem('student_lop', lop);
-  }
-  
-  if (document.getElementById('stuTabTKB').style.display !== 'none') {
-    fetchStudentTimetableWeb(false);
-  } else {
-    switchStudentTab('PROGRESS', false);
-  }
-}
 
 // Tự động điền MSSV/Lớp nếu đã từng nhập
 window.addEventListener('load', function() {
@@ -3426,268 +3439,9 @@ window.addEventListener('load', function() {
   }
 });
 
-function switchStudentTab(tab, isSilent) {
-  if (!isSilent) {
-    document.querySelectorAll('.nav-stu-TKB, .nav-stu-PROGRESS').forEach(function(el) { el.classList.remove('active'); });
-    document.querySelectorAll('.nav-stu-' + tab).forEach(function(el) { el.classList.add('active'); });
-  }
 
-  document.getElementById('stuTabTKB').style.display = tab === 'TKB' ? 'block' : 'none';
-  document.getElementById('stuTabProgress').style.display = tab === 'PROGRESS' ? 'block' : 'none';
 
-  if (tab === 'PROGRESS') {
-    if (!isSilent) {
-      document.getElementById('studentProgressContainer').innerHTML = '<div class="text-center py-5 text-primary fw-bold"><div class="spinner-border spinner-border-sm me-2"></div> Đang tải dữ liệu toàn khoa...</div>';
-    }
-    
-    // GỌI LẠI HÀM LẤY TIẾN ĐỘ TOÀN KHOA (Không cần MSSV)
-    google.script.run.withSuccessHandler(function(list) {
-      if (list.length === 0) {
-        document.getElementById('studentProgressContainer').innerHTML = '<div class="text-center py-4 text-muted">Hiện không có môn nào đang mở.</div>';
-        return;
-      }
-      
-      // TÁCH LÀM 2 DANH SÁCH: MÔN KHOA MÌNH VÀ MÔN KHOA KHÁC
-      var coreList = list.filter(function(t) { return !t.isExternal; });
-      var extList = list.filter(function(t) { return t.isExternal; });
 
-      // Sắp xếp môn Khoa mình: Tiến độ thấp lên đầu
-      coreList.sort(function(a, b) { return a.percent - b.percent; });
-
-      var html = '<div class="row g-3">';
-      
-      // 1. VẼ MÔN KHOA MÌNH TRƯỚC
-      coreList.forEach(function(t) {
-        var statusHtml = "";
-        if (t.lockStatus === "LOCKED_ALL" || t.percent >= 100) {
-          statusHtml = '<span class="badge bg-danger-soft w-100 py-2"><i class="fas fa-lock"></i> ĐÃ CHỐT SỔ</span>';
-        } else if (t.percent > 30) {
-          statusHtml = '<span class="badge bg-warning-soft w-100 py-2"><i class="fas fa-exclamation-circle"></i> QUÁ 30% (ĐÓNG GHÉP)</span>';
-        } else {
-          statusHtml = '<span class="badge bg-success-soft w-100 py-2"><i class="fas fa-check-circle"></i> ĐANG MỞ GHÉP LỚP</span>';
-        }
-        
-        var pColor = t.percent < 40 ? 'var(--success)' : (t.percent < 70 ? 'var(--warning)' : 'var(--danger)');
-
-        html += `
-        <div class="col-12 col-md-6">
-          <div class="card-custom h-100 d-flex flex-column mb-0" style="padding:16px; border-left: 4px solid ${pColor};">
-            <h6 class="fw-bold text-primary mb-1">${t.mon}</h6>
-            <div class="text-muted small mb-1"><i class="fas fa-users me-1"></i> ${t.lop}</div>
-            <div class="text-muted small mb-3"><i class="fas fa-user me-1"></i> ${t.gv}</div>
-            
-            <div class="mt-auto">
-              <div class="d-flex justify-content-between mb-1">
-                <span class="small fw-bold text-dark">Tiến độ: ${t.percent}%</span>
-                <span class="small text-muted">${t.tongTiet} tiết</span>
-              </div>
-              <div class="progress mb-3" style="height:6px; background:var(--border); border-radius:3px;">
-                <div class="progress-bar" style="width:${t.percent}%; height:100%; border-radius:3px; background-color:${pColor};"></div>
-              </div>
-              <div class="text-center">${statusHtml}</div>
-            </div>
-          </div>
-        </div>`;
-      });
-      html += '</div>';
-
-      // 2. VẼ MÔN KHOA KHÁC Ở DƯỚI CÙNG (NẾU CÓ)
-      if (extList.length > 0) {
-        html += '<div class="mt-4 mb-3 pb-2 border-bottom border-2" style="border-color: #d8b4fe !important;">';
-        html += '<h6 class="fw-bold m-0" style="color: #7e22ce;"><i class="fas fa-layer-group me-2"></i>CÁC MÔN ĐẠI CƯƠNG / KHOA KHÁC</h6>';
-        html += '</div>';
-        html += '<div class="row g-3">';
-        
-        extList.forEach(function(t) {
-          html += `
-          <div class="col-12 col-md-6">
-            <div class="card-custom h-100 d-flex flex-column mb-0" style="padding:16px; border-left: 4px solid #8b5cf6; background: #fcfaff;">
-              <div class="d-flex justify-content-between align-items-start mb-2">
-                <h6 class="fw-bold text-dark mb-0" style="color: #7e22ce !important;">${t.mon}</h6>
-                <span class="badge" style="background: #8b5cf6; color: white;"><i class="fas fa-building"></i> KHOA KHÁC</span>
-              </div>
-              <div class="text-muted small mb-1"><i class="fas fa-users me-1"></i> ${t.lop}</div>
-              <div class="text-muted small mb-3"><i class="fas fa-user me-1"></i> ${t.gv}</div>
-              
-              <div class="mt-auto pt-3 border-top border-secondary border-opacity-25">
-                <div class="text-center mb-2"><span class="badge bg-success-soft w-100 py-2 text-success"><i class="fas fa-chalkboard-teacher"></i> ĐANG GIẢNG DẠY</span></div>
-                <div class="text-danger small text-center" style="font-size: 0.7rem;"><i>* SV muốn học lại/ghép vui lòng liên hệ trực tiếp GV phụ trách.</i></div>
-              </div>
-            </div>
-          </div>`;
-        });
-        html += '</div>';
-      }
-
-      document.getElementById('studentProgressContainer').innerHTML = html;
-      
-    }).getPublicClassProgress();
-  }
-}
-
-function fetchStudentTimetableWeb(isSilent) {
-  var mode = document.querySelector('input[name="searchMode"]:checked').value;
-  var weekInput = document.getElementById('studentWeekInput').value;
-  
-  if (!weekInput) return Swal.fire('Nhắc nhở', 'Vui lòng chọn Tuần!', 'warning');
-  
-  if (!isSilent) {
-    document.getElementById('studentTimetableResultBox').style.display = 'block';
-    document.getElementById('studentLockMessage').style.display = 'none';
-    document.getElementById('studentMatrixWrapper').style.display = 'none';
-    showLoading('Đang tải lịch học...');
-  }
-
-  if (mode === 'MSSV') {
-    var mssv = document.getElementById('studentSearchMssvInput').value.trim();
-    if (!mssv) {
-      if (!isSilent) Swal.close(); // ĐÃ SỬA: Đóng loading nếu chưa nhập MSSV
-      return Swal.fire('Lưu ý', 'Vui lòng nhập MSSV để xem lịch!', 'warning');
-    }
-    
-    google.script.run
-      .withSuccessHandler(function(res) {
-        if (!isSilent) Swal.close();
-        if (res.error) {
-          document.getElementById('studentTimetableResultBox').style.display = 'none';
-          return Swal.fire('Lỗi', res.error, 'error');
-        }
-        document.getElementById('studentWelcomeText').innerText = 'Xin chào: ' + res.studentName;
-        document.getElementById('studentWelcomeMsg').style.display = 'block';
-        renderStudentTkb(res, weekInput);
-      })
-      .withFailureHandler(function(err) {
-        if (!isSilent) Swal.close(); // ĐÃ SỬA: Đóng loading nếu Google bị lỗi mạng
-        showError(err);
-      })
-      .getPersonalizedTimetable(mssv, weekInput);
-    
-  } else {
-    var lop = document.getElementById('studentSearchLopInput').value;
-    if (!lop) {
-      if (!isSilent) Swal.close(); // ĐÃ SỬA: Đóng loading nếu chưa chọn Lớp
-      return Swal.fire('Lưu ý', 'Vui lòng chọn Lớp để xem lịch!', 'warning');
-    }
-    
-    google.script.run
-      .withSuccessHandler(function(res) {
-        if (!isSilent) Swal.close();
-        document.getElementById('studentWelcomeText').innerText = 'Đang xem lịch chung của lớp: ' + lop;
-        document.getElementById('studentWelcomeMsg').style.display = 'block';
-        renderStudentTkb(res, weekInput);
-      })
-      .withFailureHandler(function(err) {
-        if (!isSilent) Swal.close(); // ĐÃ SỬA: Đóng loading nếu Google bị lỗi mạng
-        showError(err);
-      })
-      .getWeeklyTimetable(weekInput, lop, '', true, 'STUDENT');
-  }
-}
-
-function renderStudentTkb(res, weekInput) {
-  if (res.isLocked) {
-    document.getElementById('studentLockMessage').style.display = 'block';
-    document.getElementById('studentMatrixWrapper').style.display = 'none';
-  } else {
-    document.getElementById('studentLockMessage').style.display = 'none';
-    document.getElementById('studentMatrixWrapper').style.display = 'block';
-    globalMatrixList = res.timetable;
-    
-    // Truyền thêm biến isLopMode để hàm vẽ lịch biết đường hiện cảnh báo
-    var mode = document.querySelector('input[name="searchMode"]:checked').value;
-    var isLopMode = (mode === 'LOP');
-    
-    document.getElementById('matrixTableHtml').innerHTML = buildMatrixHtml(res.timetable, weekInput, false, isLopMode);
-    document.getElementById('mobileStudentTimetable').innerHTML = buildMobileTimetableHtml(res.groupedTimetable, weekInput, false, isLopMode);
-  }
-}
-
-function buildMobileTimetableHtml(groupedData, startDateStr, isAdmin, isLopMode) {
-  groupedData = groupedData || {}; // <--- THÊM DÒNG NÀY VÀO ĐÂY ĐỂ CHỐNG LỖI
-  var start = new Date(startDateStr);
-  var thuNames = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "CN"];
-  
-  var navHtml = '<div class="mobile-week-nav">';
-  var listHtml = '<div class="mobile-schedule-list">';
-  
-  var todayIso = toLocalIsoDate();
-  var hasAnyClass = false;
-
-  for (var i = 0; i < 7; i++) {
-    var t = new Date(start);
-    t.setDate(start.getDate() + i);
-    var dStr = toLocalIsoDate(t);
-    var displayNgay = String(t.getDate()).padStart(2,'0');
-    
-    var items = groupedData[dStr] || [];
-    var isActive = (dStr === todayIso) ? 'active' : '';
-    var hasDot = items.length > 0 ? '<div style="width:4px;height:4px;background:var(--danger);border-radius:50%;margin-top:4px;"></div>' : '';
-    
-    navHtml += '<div class="mobile-day-circle '+isActive+'" onclick="scrollToMobileDay(\''+dStr+'\', this)">' +
-                 '<span class="thu">'+thuNames[i]+'</span>' +
-                 '<span class="ngay">'+displayNgay+'</span>' +
-                 hasDot +
-               '</div>';
-               
-    if (items.length > 0) {
-      hasAnyClass = true;
-      listHtml += '<div class="mobile-day-group" id="mobile-day-'+dStr+'">';
-      listHtml += '<div class="fw-bold mb-2 text-primary"><i class="fas fa-calendar-day"></i> '+thuNames[i]+', '+displayNgay+'/'+String(t.getMonth()+1).padStart(2,'0')+'</div>';
-      
-      items.forEach(function(item) {
-        var gvDisplayName = item.gvName ? item.gvName : item.gvId;
-        var phongDisplay = item.phong || 'Chưa xếp';
-        var isExamCls = item.isExam ? 'exam' : (item.ghichu.includes('[LỊCH_NGOÀI]') ? 'external-card' : '');
-        var iconMon = item.isExam ? '<i class="fas fa-file-signature text-danger"></i> THI: ' : '';
-        
-        var btnActions = "";
-        if (isAdmin) {
-          btnActions = '<div class="d-flex gap-2 mt-3 pt-3 border-top">';
-          btnActions += '<button class="btn btn-sm btn-outline-primary flex-fill" data-rowidx="'+item.rowIdx+'" data-ngay="'+item.ngayIso+'" data-ca="'+item.ca+'" data-phong="'+escapeHtml(item.phong)+'" data-lop="'+escapeHtml(item.lop)+'" data-mon="'+escapeHtml(item.mon)+'" data-gv="'+escapeHtml(item.gvId)+'" data-ghichu="'+escapeHtml(item.ghichu)+'" onclick="openRescheduleModal(this)"><i class="fas fa-exchange-alt"></i> Dời</button>';
-          if (!item.isExam) {
-            btnActions += '<button class="btn btn-sm btn-outline-primary flex-fill" onclick="holdScheduleWeb('+item.rowIdx+', \''+escapeHtml(item.lop)+'\', \''+escapeHtml(item.mon)+'\', \''+escapeHtml(item.gvId)+'\')"><i class="fas fa-pause"></i> Hoãn</button>';
-          }
-          btnActions += '<button class="btn btn-sm btn-outline-danger flex-fill" onclick="deleteScheduleWeb('+item.rowIdx+')"><i class="fas fa-trash"></i> Xóa</button>';
-          btnActions += '</div>';
-        }
-
-        // [ĐÃ SỬA] Cảnh báo Lớp Ghép thu gọn thành cái Tag nhỏ xíu
-        var mergedNote = (isLopMode && item.isMerged) ? '<span class="badge bg-warning text-dark ms-2 align-middle" style="font-size:0.65rem; padding: 3px 6px;"><i class="fas fa-exclamation-triangle"></i> Lớp ghép (Tra MSSV)</span>' : '';
-        
-        var ghiChuHtml = "";
-        if (item.isExam && item.ghichu) {
-          ghiChuHtml = '<div class="mt-1 p-1 rounded" style="background:#fef2f2; border:1px dashed #fca5a5; color:#dc2626; font-size:0.75rem;"><i class="fas fa-thumbtack"></i> <b>Lưu ý:</b> '+item.ghichu+'</div>';
-        } else if (item.ghichu) {
-          ghiChuHtml = '<div class="mt-1 p-1 rounded" style="background:#eff6ff; border:1px dashed #93c5fd; color:#1d4ed8; font-size:0.75rem;"><i class="fas fa-info-circle"></i> '+item.ghichu+'</div>';
-        }
-
-        // [ĐÃ SỬA] Bố cục Timeline: Trái là Ca, Phải là Thông tin
-        listHtml += '<div class="mobile-schedule-card '+isExamCls+' d-flex gap-2 align-items-center">' +
-                      '<div class="text-center pe-2 border-end border-secondary border-opacity-25" style="min-width: 55px;">' +
-                        '<div class="fw-bold text-primary" style="font-size: 0.85rem;">' + item.ca.replace("Ca ", "") + '</div>' +
-                      '</div>' +
-                      '<div class="flex-grow-1" style="min-width: 0;">' +
-                        '<div class="mon-title" style="white-space: normal; overflow: visible; text-overflow: unset;">' + iconMon + item.mon + mergedNote + '</div>' +
-                        '<div class="text-muted small" style="white-space: normal; overflow: visible; text-overflow: unset;"><i class="fas fa-users me-1"></i> ' + item.lop + '</div>' +
-                        '<div class="text-muted small" style="white-space: normal; overflow: visible; text-overflow: unset;"><i class="fas fa-user me-1"></i> ' + gvDisplayName + ' <span class="mx-1">|</span> <i class="fas fa-door-open me-1"></i> ' + phongDisplay + '</div>' +
-                        ghiChuHtml + btnActions +
-                      '</div>' +
-                    '</div>';
-      });
-      listHtml += '</div>';
-    }
-  }
-  
-  navHtml += '</div>';
-  
-  if (!hasAnyClass) {
-    listHtml += '<div class="text-center p-4 text-muted card-custom mt-3"><i class="fas fa-bed fs-1 mb-3 d-block" style="opacity:0.3;"></i>Tuần này không có lịch học.</div>';
-  }
-  
-  listHtml += '</div>';
-  
-  return navHtml + listHtml;
-}
 
 function scrollToMobileDay(dateIso, element) {
   var circles = element.parentElement.querySelectorAll('.mobile-day-circle');
@@ -4107,9 +3861,11 @@ function loadAdminDashboard(isSilent) {
               stDeThi = '<span class="doc-pill done"><i class="fas fa-building"></i> Đề (Khoa)</span>';
           } else {
               let links = t.link.split('||').map(l => l.trim()).filter(l => l);
-              if (links.length > 0) {
-                  let safeLink = links[0]; 
-                  stDeThi = `<a href="${safeLink}" target="_blank" class="doc-pill done link"><i class="fas fa-download"></i> Đã nộp Đề</a>`;
+              let names = (t.linkNames || "").split('||').map(n => n.trim());
+              if (links.length === 1) {
+                  stDeThi = `<a href="${links[0]}" target="_blank" class="doc-pill done link" title="${names[0] || 'Đã nộp Đề'}"><i class="fas fa-download"></i> Đã nộp Đề</a>`;
+              } else if (links.length > 1) {
+                  stDeThi = links.map((lnk, idx) => `<a href="${lnk}" target="_blank" class="doc-pill done link me-1" title="${names[idx] || ('Đề ' + (idx + 1))}"><i class="fas fa-download"></i> Đề ${idx + 1}</a>`).join('');
               } else {
                   stDeThi = '<span class="doc-pill missing"><i class="fas fa-times-circle"></i> Lỗi Link</span>';
               }
@@ -4615,101 +4371,6 @@ function addAssignmentWeb() {
   }
 }
 
-function addScheduleBulkWeb() {
-  var parentSelect = document.getElementById('schedParentSelect').value;
-  var lopTarget = document.getElementById('schedLop').value;
-  var mon = document.getElementById('schedMonHidden').value;
-  var gv = document.getElementById('schedGvHidden').value;
-  var ghichu = document.getElementById('schedGhiChu').value.trim();
-  var isSmart = document.getElementById('toggleSmartSchedule').checked;
-  var isExam = document.getElementById('schedIsExam').value === "true"; 
-
-  if (!parentSelect || !lopTarget || !mon || !gv) return Swal.fire('Thiếu thông tin', 'Vui lòng chọn Phân công ở Bước 1!', 'warning');
-
-  var rows = document.querySelectorAll('.session-row');
-  var sessions = [];
-  var hasEmptyDate = false;
-  rows.forEach(function(row) {
-    var n = row.querySelector('.schedNgayInp').value;
-    var c = row.querySelector('.schedCaInp').value;
-    var p = row.querySelector('.schedPhongInp').value.trim();
-    if (!n) hasEmptyDate = true;
-    sessions.push({ngay: n, ca: c, phong: p});
-  });
-  if (hasEmptyDate) return Swal.fire('Thiếu ngày', 'Vui lòng điền ngày học cho tất cả dòng!', 'warning');
-
-  if (isSmart) {
-    var parentLop = parentSelect.split('|')[0];
-    var allGroups = [];
-    var options = document.getElementById('schedLop').options;
-    for (var i = 1; i < options.length; i++) {
-      allGroups.push(options[i].value);
-    }
-    
-    if (allGroups.length <= 1) {
-      return Swal.fire('Lưu ý', 'Chế độ Auto Chia Nhóm chỉ hoạt động khi lớp có từ 2 nhóm trở lên!', 'warning');
-    }
-
-    var payload = {
-      parentLop: parentLop,
-      mon: mon,
-      gv: gv,
-      ghichu: ghichu,
-      sessions: sessions,
-      groups: allGroups,
-      isExam: isExam 
-    };
-
-    showLoading('Đang chạy thuật toán...');
-    google.script.run
-      .withSuccessHandler(function(res) {
-        var htmlMsg = '<div class="text-start">';
-        if (res.successCount > 0) htmlMsg += '<div class="alert alert-success p-2 mb-2"><i class="fas fa-check"></i> Đã rải thành công '+res.successCount+' buổi học.</div>';
-        if (res.errors.length > 0) {
-          htmlMsg += '<div class="alert alert-danger p-2"><b><i class="fas fa-times"></i> Lỗi ('+res.errors.length+' ca):</b><ul class="mb-0 ps-3 small">';
-          res.errors.forEach(function(err) { htmlMsg += '<li>'+err+'</li>'; });
-          htmlMsg += '</ul></div>';
-        }
-        Swal.fire({ title: 'KẾT QUẢ', html: htmlMsg + '</div>', icon: res.errors.length > 0 ? 'warning' : 'success' });
-        loadAdminTimetableMatrix();
-        loadAdminDashboard();
-      })
-      .withFailureHandler(showError)
-      .smartScheduleMultiGroup(payload);
-
-  } else {
-    var payload = {
-      parentLop: parentSelect.split('|')[0],
-      lopTarget: lopTarget,
-      mon: mon,
-      gv: gv,
-      ghichu: ghichu,
-      sessions: sessions,
-      isExam: isExam 
-    };
-    showLoading('Đang kiểm tra...');
-    google.script.run
-      .withSuccessHandler(function(res) {
-        var htmlMsg = '<div class="text-start">';
-        if (res.successCount > 0) htmlMsg += '<div class="alert alert-success p-2 mb-2"><i class="fas fa-check"></i> Đã xếp thành công '+res.successCount+' buổi học.</div>';
-        if (res.errors.length > 0) {
-          htmlMsg += '<div class="alert alert-danger p-2"><b><i class="fas fa-times"></i> Lỗi ('+res.errors.length+' buổi):</b><ul class="mb-0 ps-3 small">';
-          res.errors.forEach(function(err) { htmlMsg += '<li>'+err+'</li>'; });
-          htmlMsg += '</ul></div>';
-        }
-        Swal.fire({ title: 'KẾT QUẢ', html: htmlMsg + '</div>', icon: res.errors.length > 0 ? 'warning' : 'success' });
-
-        var container = document.getElementById('sessionContainer');
-        container.innerHTML = '<div class="row g-2 mb-2 session-row"><div class="col-4"><input type="date" class="form-control schedNgayInp px-1 text-center" style="font-size:0.85rem;"></div><div class="col-3"><select class="form-select schedCaInp px-1 text-center" style="font-size:0.85rem;"><option value="Ca Sáng">Sáng</option><option value="Ca Chiều">Chiều</option><option value="Ca Tối">Tối</option></select></div><div class="col-3"><input type="text" class="form-control schedPhongInp px-2" placeholder="Phòng" style="font-size:0.85rem;"></div><div class="col-2"><button class="btn btn-outline-danger w-100 px-0" onclick="removeSessionRow(this)"><i class="fas fa-times"></i></button></div></div>';
-        if (document.querySelector('.schedNgayInp')) document.querySelector('.schedNgayInp').value = toLocalIsoDate();
-
-        loadAdminTimetableMatrix();
-        loadAdminDashboard();
-      })
-      .withFailureHandler(showError)
-      .checkScheduleConflictAndSaveBulk(payload);
-  }
-}
 
 // --- XỬ LÝ LỊCH KHOA KHÁC ---
 document.getElementById('modalLichNgoai').addEventListener('show.bs.modal', function () {
@@ -5755,129 +5416,6 @@ function copyParentMessage(name, mssv, subjectsStr) {
   });
 }
 
-function exportMonthlyAbsenteeismExcel() {
-  var startMonth = document.getElementById('adminMonthStart').value;
-  var endMonth = document.getElementById('adminMonthEnd').value;
-
-  if (!startMonth || !endMonth) return Swal.fire('Lưu ý', 'Vui lòng chọn đầy đủ Từ tháng và Đến tháng!', 'warning');
-  if (startMonth > endMonth) return Swal.fire('Lỗi', 'Tháng bắt đầu không được lớn hơn tháng kết thúc!', 'error');
-
-  showLoading('Đang tổng hợp dữ liệu...');
-  
-  google.script.run.withSuccessHandler(function(res) {
-    if (!res.success) {
-      Swal.fire('Lỗi', res.message, 'error');
-      return;
-    }
-    
-    var data = res.data;
-    if (data.length === 0) {
-      Swal.fire('Thông báo', 'Không có sinh viên nào vắng > 2 buổi trong giai đoạn này!', 'info');
-      return;
-    }
-
-    var ws_data = [];
-    
-    ws_data.push([
-      { v: "TRƯỜNG CAO ĐẲNG ĐẠI VIỆT ĐÀ NẴNG", s: getStyle(12, false, "center", "center") }, "", "", "", 
-      { v: "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM", s: getStyle(12, true, "center", "center") }, "", ""
-    ]);
-    ws_data.push([
-      { v: "KHOA KỸ THUẬT - CÔNG NGHỆ", s: getStyle(12, true, "center", "center", false, false, null, false, true) }, "", "", "", 
-      { v: "Độc lập - Tự do - Hạnh phúc", s: getStyle(12, true, "center", "center", false, false, null, true, true) }, "", ""
-    ]);
-    ws_data.push(["", "", "", "", "", "", ""]);
-    
-    ws_data.push([
-      { v: "BÁO CÁO TÌNH HÌNH SINH VIÊN VẮNG HỌC", s: getStyle(16, true, "center", "center") }, "", "", "", "", "", ""
-    ]);
-    
-    // Xử lý Tiêu đề Giai đoạn
-    var startParts = startMonth.split('-');
-    var endParts = endMonth.split('-');
-    var displayRange = "TỪ THÁNG " + startParts[1] + "/" + startParts[0] + " ĐẾN THÁNG " + endParts[1] + "/" + endParts[0];
-    if (startMonth === endMonth) {
-        displayRange = "THÁNG: " + startParts[1] + "/" + startParts[0];
-    }
-
-    ws_data.push([
-      { v: displayRange, s: getStyle(12, true, "center", "center") }, "", "", "", "", "", ""
-    ]);
-    ws_data.push([
-      { v: "(Chỉ thống kê sinh viên vắng > 2 buổi/môn trong giai đoạn trên)", s: getStyle(11, true, "center", "center", false, false, "FF0000", false, true) }, "", "", "", "", "", ""
-    ]);
-    ws_data.push(["", "", "", "", "", "", ""]);
-
-    var headerStyle = getStyle(11, true, "center", "center", true, true);
-    ws_data.push([
-      { v: "STT", s: headerStyle },
-      { v: "MSSV", s: headerStyle },
-      { v: "Họ và chữ lót", s: headerStyle },
-      { v: "Tên", s: headerStyle },
-      { v: "Lớp", s: headerStyle },
-      { v: "Môn học vi phạm", s: headerStyle },
-      { v: "Tổng số\nbuổi vắng", s: headerStyle }
-    ]);
-
-    var dataStyleCenter = getStyle(11, false, "center", "center", true, true);
-    var dataStyleLeft = getStyle(11, false, "left", "center", true, true);
-    var dataStyleRed = getStyle(11, true, "center", "center", true, true, "FF0000");
-
-    data.forEach(function(s, index) {
-      ws_data.push([
-        { v: (index + 1), s: dataStyleCenter },
-        { v: s.mssv, s: dataStyleCenter },
-        { v: s.ho, s: dataStyleLeft },
-        { v: s.ten, s: dataStyleLeft },
-        { v: s.lop, s: dataStyleCenter },
-        { v: s.mon, s: dataStyleLeft },
-        { v: s.count, s: dataStyleRed }
-      ]);
-    });
-
-    var ws = XLSX.utils.aoa_to_sheet(ws_data);
-    
-    ws['!merges'] = [
-      { s: {r: 0, c: 0}, e: {r: 0, c: 3} }, { s: {r: 0, c: 4}, e: {r: 0, c: 6} }, 
-      { s: {r: 1, c: 0}, e: {r: 1, c: 3} }, { s: {r: 1, c: 4}, e: {r: 1, c: 6} }, 
-      { s: {r: 3, c: 0}, e: {r: 3, c: 6} }, 
-      { s: {r: 4, c: 0}, e: {r: 4, c: 6} }, 
-      { s: {r: 5, c: 0}, e: {r: 5, c: 6} }
-    ];
-
-    ws['!cols'] = [ 
-      {wpx: 40},  // A: STT
-      {wpx: 90},  // B: MSSV
-      {wpx: 160}, // C: Họ lót
-      {wpx: 60},  // D: Tên
-      {wpx: 90},  // E: Lớp
-      {wpx: 180}, // F: Môn học
-      {wpx: 70}   // G: Số buổi vắng
-    ];
-
-    ws['!rows'] = [];
-    ws['!rows'][3] = { hpt: 32 }; 
-    ws['!rows'][7] = { hpt: 30 }; 
-    for(var r = 8; r < 8 + data.length; r++) {
-      ws['!rows'][r] = { hpt: 24 }; 
-    }
-    
-    ws['!pageSetup'] = { 
-      paperSize: 9, orientation: 'portrait', 
-      fitToPage: true, fitToWidth: 1, fitToHeight: 0, 
-      margins: { left: 0.25, right: 0.25, top: 0.5, bottom: 0.5 }
-    };
-    
-    var wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "BaoCaoVangHoc");
-    
-    var fileName = "BaoCaoVangHoc_" + startMonth + "_den_" + endMonth + ".xlsx";
-    if (startMonth === endMonth) fileName = "BaoCaoVangHoc_Thang_" + startMonth + ".xlsx";
-    
-    XLSX.writeFile(wb, fileName);
-    Swal.close();
-  }).withFailureHandler(showError).getMonthlyAbsenteeismData(startMonth, endMonth);
-}
 
 function adminTraCuuSV() {
   var mssv = document.getElementById('adminSearchMssv').value.trim();
@@ -7847,7 +7385,10 @@ function quickSelectBaoGiang(check) {
   boxes.forEach(function(cb) {
     var tr = cb.closest('tr');
     if (!tr || tr.style.display !== 'none') {
-      cb.checked = !!check;
+      if (!check) { cb.checked = false; return; }
+      var inp = tr ? tr.querySelector('.bg-email-input') : null;
+      var val = inp ? inp.value.trim() : '';
+      cb.checked = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
     }
   });
   var chkAll = document.getElementById('chkAllBg');
@@ -8059,14 +7600,15 @@ function loadBaoGiangData() {
 
     var html = '';
     currentBgTeachers.forEach(function(gv, idx) {
-      var emailVal = gv.email ? gv.email : '';
-      var borderClass = emailVal ? 'border-success' : 'border-danger';
+      var emailVal = gv.email ? String(gv.email).trim() : '';
+      var hasValidMail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal);
+      var borderClass = hasValidMail ? 'border-success' : 'border-warning';
       
       html += '<tr>' +
-        '<td class="text-center"><input class="form-check-input chk-bg-item" type="checkbox" value="'+idx+'" checked></td>' +
+        '<td class="text-center"><input class="form-check-input chk-bg-item" type="checkbox" value="'+idx+'" ' + (hasValidMail ? 'checked' : '') + '></td>' +
         '<td><b class="text-primary">' + gv.fullname + '</b><br><small class="text-muted">' + gv.username + '</small></td>' +
         '<td class="text-center"><span class="badge bg-primary-subtle text-primary fw-bold">' + gv.sessionCount + ' buổi</span></td>' +
-        '<td><input type="email" class="form-control form-control-sm bg-email-input ' + borderClass + '" data-idx="'+idx+'" value="' + emailVal + '" placeholder="Nhập email..." oninput="this.className=\'form-control form-control-sm bg-email-input border-success\'"></td>' +
+        '<td><input type="email" class="form-control form-control-sm bg-email-input ' + borderClass + '" data-idx="'+idx+'" value="' + emailVal + '" placeholder="Chưa có email (tự bỏ qua)..." oninput="this.className=\'form-control form-control-sm bg-email-input border-success\'"></td>' +
       '</tr>';
     });
     
@@ -8083,7 +7625,10 @@ function toggleAllBaoGiang(chkAll) {
   checkboxes.forEach(function(chk) {
     var tr = chk.closest('tr');
     if (!tr || tr.style.display !== 'none') {
-      chk.checked = chkAll.checked;
+      if (!chkAll.checked) { chk.checked = false; return; }
+      var inp = tr ? tr.querySelector('.bg-email-input') : null;
+      var val = inp ? inp.value.trim() : '';
+      chk.checked = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
     }
   });
 }
@@ -8213,7 +7758,7 @@ function sendBaoGiangEmails() {
   }
 
   var selectedTeachers = [];
-  var hasEmptyEmail = false;
+  var skippedNoEmail = 0;
 
   checkboxes.forEach(function(chk) {
     var idx = chk.value;
@@ -8222,8 +7767,8 @@ function sendBaoGiangEmails() {
     var emailInput = document.querySelector('.bg-email-input[data-idx="'+idx+'"]');
     var emailVal = emailInput ? emailInput.value.trim() : (gv.email ? gv.email.trim() : '');
     
-    if (!emailVal || emailVal.indexOf('@') === -1) {
-      hasEmptyEmail = true;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal)) {
+      skippedNoEmail++;
     } else {
       selectedTeachers.push({
         username: gv.username,
@@ -8234,8 +7779,8 @@ function sendBaoGiangEmails() {
     }
   });
 
-  if (hasEmptyEmail) {
-    return Swal.fire('Lỗi', 'Có Giảng viên được chọn nhưng chưa nhập Email hợp lệ. Vui lòng kiểm tra lại các ô màu đỏ!', 'error');
+  if (selectedTeachers.length === 0) {
+    return Swal.fire('Không có Email hợp lệ', 'Không có Giảng viên nào trong danh sách đã chọn có địa chỉ Email hợp lệ để gửi!', 'warning');
   }
 
   // Tự động lưu thông tin liên hệ vào localStorage để dùng lần sau
@@ -8253,7 +7798,7 @@ function sendBaoGiangEmails() {
 
   Swal.fire({
     title: 'Xác nhận gửi ' + modeName + '?',
-    html: 'Hệ thống sẽ gửi Email cho <b>' + selectedTeachers.length + '</b> Giảng viên đã chọn.' + lockNotice + '<br><br><small class="text-muted">Lưu ý: Địa chỉ Email mới (nếu sửa) sẽ tự động lưu vào hệ thống.</small>',
+    html: 'Hệ thống sẽ gửi Email cho <b>' + selectedTeachers.length + '</b> Giảng viên có email hợp lệ.' + (skippedNoEmail > 0 ? '<br><span class="text-muted">(Tự động bỏ qua <b>' + skippedNoEmail + '</b> giảng viên chưa có email)</span>' : '') + lockNotice + '<br><br><small class="text-muted">Lưu ý: Địa chỉ Email mới (nếu sửa) sẽ tự động lưu vào hệ thống.</small>',
     icon: 'question',
     showCancelButton: true,
     confirmButtonText: 'Đồng ý gửi ngay',
@@ -8384,7 +7929,8 @@ function loadAutoReminderData() {
             ? '<span class="badge bg-success-subtle text-success border border-success" title="Đã gửi email nhắc việc trong ngày hôm nay"><i class="fas fa-check me-1"></i> ' + g.sentTodayAt + '</span>'
             : '<span class="badge bg-light text-muted border">Chưa gửi</span>';
 
-          var isChecked = !g.sentTodayAt && g.email;
+          var hasValidMail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(g.email || '').trim());
+          var isChecked = !g.sentTodayAt && hasValidMail;
 
           h += '<tr>' +
             '<td class="text-center">' +
@@ -8434,7 +7980,13 @@ function loadAutoReminderData() {
 
 function toggleSelectAllRemindGv(state) {
   var items = document.querySelectorAll('.chk-remind-item');
-  items.forEach(function(chk) { chk.checked = state; });
+  items.forEach(function(chk) {
+    if (!state) { chk.checked = false; return; }
+    var tr = chk.closest('tr');
+    var inp = tr ? tr.querySelector('.remind-email-input') : null;
+    var val = inp ? inp.value.trim() : '';
+    chk.checked = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
+  });
   var master = document.getElementById('chkMasterRemind');
   if (master) master.checked = state;
 }
@@ -8483,25 +8035,26 @@ function sendAutoReminderManual() {
   }
 
   var targets = [];
-  var missingEmail = false;
+  var skippedNoEmail = 0;
 
   chks.forEach(function(c) {
     var idx = parseInt(c.value, 10);
     var g = currentRemindTeachers[idx];
     if (!g) return;
     var emailInp = document.querySelector('.remind-email-input[data-idx="' + idx + '"]');
-    var emailVal = emailInp ? emailInp.value.trim() : (g.email || '');
-    if (!emailVal || emailVal.indexOf('@') === -1) {
-      missingEmail = true;
+    var emailVal = emailInp ? emailInp.value.trim() : (g.email || '').trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal)) {
+      skippedNoEmail++;
+      return;
     }
     targets.push({ username: g.username, fullname: g.fullname, email: emailVal });
   });
 
-  if (missingEmail) {
+  if (targets.length === 0) {
     if (typeof Swal !== 'undefined') {
-      return Swal.fire('Thiếu Email', 'Có giảng viên được chọn nhưng chưa có địa chỉ email hợp lệ. Vui lòng điền email vào ô tương ứng trước khi gửi!', 'warning');
+      return Swal.fire('Không có Email hợp lệ', 'Không có giảng viên nào được chọn có địa chỉ email hợp lệ để gửi!', 'warning');
     }
-    return alert('Có giảng viên được chọn nhưng chưa có địa chỉ email hợp lệ!');
+    return alert('Không có giảng viên nào có email hợp lệ!');
   }
 
   var confirmAction = function() {
@@ -8546,7 +8099,7 @@ function sendAutoReminderManual() {
   if (typeof Swal !== 'undefined') {
     Swal.fire({
       title: 'Xác nhận gửi email nhắc việc?',
-      text: 'Hệ thống sẽ gửi email học vụ trang trọng đến ' + targets.length + ' giảng viên đã chọn và ghi nhật ký vào sheet AUTO_REMIND_LOG.',
+      html: 'Hệ thống sẽ gửi email học vụ đến <b>' + targets.length + '</b> giảng viên có email hợp lệ' + (skippedNoEmail > 0 ? ' (tự động bỏ qua <b>' + skippedNoEmail + '</b> người chưa có email)' : '') + ' và ghi nhật ký vào sheet AUTO_REMIND_LOG.',
       icon: 'question',
       showCancelButton: true,
       confirmButtonText: 'Đồng ý gửi ngay',
@@ -8907,14 +8460,6 @@ function fetchStudentTimetableWeb(isSilent){
 }
 
 /* ---------- Vẽ lịch ---------- */
-function renderStudentTkb(res, week){
-  if(res.isLocked){
-    document.getElementById('spResult').innerHTML='<div class="sp-lock"><i class="fas fa-lock"></i> Lịch tuần này đang được Khoa điều chỉnh.<br><span style="font-weight:600">Vui lòng quay lại sau.</span></div>';
-    return;
-  }
-  spData={ list:(res.timetable||[]).slice(), week:spMonday(week), lopMode:(spMode()==='LOP') };
-  spDraw();
-}
 
 function spItemHtml(it, lopMode, compact){
   var rawMon=String(it.mon||''), gh=String(it.ghichu||'');
@@ -8963,44 +8508,6 @@ function spBuildMatrix(list, mon, lopMode){
   return h+'</tbody></table>';
 }
 
-function spBuildMobile(list, mon, lopMode){
-  var today=spToday(), days=[], i, byDay={};
-  for(i=0;i<7;i++){ days.push(spAdd(mon,i)); byDay[days[i]]=[]; }
-  list.forEach(function(it){ if(byDay[it.ngayIso]) byDay[it.ngayIso].push(it); });
-  days.forEach(function(d){ byDay[d].sort(function(a,b){return spCaIdx(a.ca)-spCaIdx(b.ca);}); });
-  if(days.indexOf(spSelDay)<0){
-    spSelDay = days.indexOf(today)>=0 ? today : '';
-    if(!spSelDay){ for(i=0;i<7;i++){ if(byDay[days[i]].length){ spSelDay=days[i]; break; } } }
-    if(!spSelDay) spSelDay=days[0];
-  }
-  var h='<div class="sp-days">';
-  days.forEach(function(d,k){
-    var items=byDay[d], dots='';
-    items.slice(0,3).forEach(function(x){ dots+='<b'+(x.isExam?' class="ex"':'')+'></b>'; });
-    h+='<button type="button" class="sp-day'+(d===today?' today':'')+(d===spSelDay?' active':'')+'" onclick="spPickDay(\''+d+'\')" aria-label="'+SP_THU[k]+' '+spDM(d)+'">'+
-       '<span class="w">'+SP_THU_SHORT[k]+'</span><span class="n">'+spPad(spParse(d).getDate())+'</span><span class="dot">'+dots+'</span></button>';
-  });
-  h+='</div>';
-  var sel=byDay[spSelDay]||[], idx=days.indexOf(spSelDay);
-  h+='<div class="sp-dayhead"><span>'+SP_THU[idx]+', '+spDMY(spSelDay)+'</span>'+(spSelDay===today?'<span class="sp-now">Hôm nay</span>':'')+'<span class="cnt">'+sel.length+' buổi</span></div>';
-  if(!sel.length) h+='<div class="sp-empty"><i class="fas fa-mug-hot"></i>Không có lịch học ngày này.</div>';
-  else sel.forEach(function(it){ h+=spItemHtml(it,lopMode,false); });
-  return h;
-}
-function spPickDay(d){
-  spSelDay=d; var el=document.getElementById('spMobile');
-  if(el&&spData) el.innerHTML=spBuildMobile(spData.list, spData.week, spData.lopMode);
-}
-function spDraw(){
-  var box=document.getElementById('spResult'), d=spData; if(!d) return;
-  if(!d.list.length){ box.innerHTML='<div class="sp-empty"><i class="fas fa-mug-hot"></i>Tuần này không có lịch học.</div>'; return; }
-  var legend='<div class="sp-legend">'+
-    '<span><i style="background:#2563eb"></i>Lý thuyết</span><span><i style="background:#059669"></i>Thực hành</span>'+
-    '<span><i style="background:#dc2626"></i>Lịch thi</span><span><i style="background:#7c3aed"></i>Khoa khác</span></div>';
-  box.innerHTML=legend+
-    '<div class="sp-matrix-wrap">'+spBuildMatrix(d.list,d.week,d.lopMode)+'</div>'+
-    '<div class="sp-mobile" id="spMobile">'+spBuildMobile(d.list,d.week,d.lopMode)+'</div>';
-}
 
 /* ---------- Tab + Tiến độ ---------- */
 function switchStudentTab(tab, isSilent){
@@ -9695,8 +9202,11 @@ function rowHtml(it,i,today){
  var qt=(ls==='LOCKED_GK'||ls==='LOCKED_ALL')?dp('ok','fa-check','QT','Đã khóa Điểm QT'):dp('no','fa-xmark','QT','Thiếu Điểm QT');
  var de;
  if(off)de=dp('kh','fa-building','Đề','Đề do Khoa tổ chức (thi ngoài)');
- else if(t.link){var lk=String(t.link).split('||').map(function(s){return s.trim()}).filter(Boolean);
-  de=lk.length?dp('ok','fa-download','Đề','Đã nộp đề – bấm để mở file',lk[0]):dp('no','fa-triangle-exclamation','Đề','Lỗi link đề thi')}
+ else if(t.link){var lk=String(t.link).split('||').map(function(s){return s.trim()}).filter(Boolean),
+  nm=String(t.linkNames||'').split('||').map(function(s){return s.trim()});
+  if(lk.length===1){de=dp('ok','fa-download','Đề',(nm[0]||'Đã nộp đề')+' – bấm để mở file',lk[0])}
+  else if(lk.length>1){de='<button type="button" class="tp-d ok" style="border:0;cursor:pointer" onclick="TPA.act(\'examFiles\','+i+')" title="Đã nộp '+lk.length+' file đề – bấm để xem &amp; mở tất cả"><i class="fas fa-folder-open"></i>Đề ('+lk.length+')</button>'}
+  else{de=dp('no','fa-triangle-exclamation','Đề','Lỗi link đề thi')}}
  else de=dp('no','fa-xmark','Đề','Chưa nộp đề');
  var ck=(ls==='LOCKED_ALL')?dp('ok','fa-check','CK','Đã có Điểm CK'):(t.hasCK?dp('dr','fa-pen','CK','Đã có Điểm CK (nháp)'):dp('no','fa-xmark','CK','Thiếu Điểm CK'));
 
@@ -9823,6 +9333,7 @@ window.TPA={
    case 'xthi':exportExcelCustom('DANH_SACH_THI',t.lop,t.mon);break;
    case 'hide':toggleHide(t.lop,t.mon,!t.isHidden);break;
    case 'del':removeAssignmentWeb(t.user,t.lop,t.mon);break;
+   case 'examFiles':if(typeof openAdminExamFilesModal==='function')openAdminExamFilesModal(t);break;
   }},
  pay:function(i,el){var t=TP.view[i];if(!t)return;t.isPaid=el.checked;togglePaymentWeb(t.user,t.lop,t.mon,el.checked)},
  q:function(k){TP.q=(TP.q===k)?'all':k;safeRender(true)},
@@ -10751,233 +10262,64 @@ var wb = XLSX.utils.book_new();
 
 })();
 </script>
-<!-- ==================================================================== -->
-<!-- MODULE CẢNH BÁO & XẾP PHÒNG NHANH CHO CÁC BUỔI "CHƯA XẾP PHÒNG"     -->
-<!-- (Tự động tích hợp vào Ma Trận TKB - Giữ nguyên 100% tính năng cũ)    -->
-<!-- ==================================================================== -->
-<style>
-  /* 1. Làm nổi bật ô lịch Chưa Xếp Phòng trên Ma Trận TKB */
-  #adminMatrixTableHtml .matrix-cell.missing-room-cell,
-  #gvMatrixTableHtml .matrix-cell.missing-room-cell {
-    background: linear-gradient(135deg, #fffbeb 0%, #fef2f2 100%) !important;
-    border: 1.5px dashed #f59e0b !important;
-    border-left: 5px solid #ea580c !important;
-    box-shadow: 0 3px 10px rgba(234, 88, 12, 0.14) !important;
-  }
-  .missing-room-corner-tag {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    background: #dc2626;
-    color: #ffffff;
-    font-size: 0.64rem;
-    font-weight: 800;
-    padding: 2px 7px;
-    border-radius: 99px;
-    margin-bottom: 4px;
-    letter-spacing: 0.2px;
-    box-shadow: 0 2px 6px rgba(220, 38, 38, 0.3);
-    animation: pulseMissingRoom 1.8s infinite ease-in-out;
-  }
-  .missing-room-btn-inline {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    margin-top: 4px;
-    padding: 3px 8px;
-    border-radius: 6px;
-    background: #fee2e2;
-    border: 1px solid #fca5a5;
-    color: #b91c1c !important;
-    font-weight: 800 !important;
-    font-size: 0.76rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-  .missing-room-btn-inline:hover {
-    background: #dc2626;
-    color: #ffffff !important;
-    border-color: #dc2626;
-    transform: translateY(-1px);
-  }
-  @keyframes pulseMissingRoom {
-    0%, 100% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.04); opacity: 0.88; }
-  }
-  @keyframes focusFlashCell {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
-    25%, 75% { box-shadow: 0 0 0 6px rgba(220, 38, 38, 0.45); transform: scale(1.02); }
-  }
-  .missing-room-focus-flash {
-    animation: focusFlashCell 1.6s ease-in-out 2 !important;
-    z-index: 20 !important;
-  }
 
-  /* 2. Thanh Banner Cảnh Báo Thiếu Phòng ngay trên đầu bảng Ma Trận */
-  #missingRoomBannerBox {
-    display: none;
-    margin: 8px 12px 4px 12px;
-    padding: 10px 14px;
-    border-radius: 12px;
-    background: linear-gradient(90deg, #fff7ed 0%, #fef2f2 100%);
-    border: 1.5px solid #fdba74;
-    border-left: 5px solid #ea580c;
-    box-shadow: 0 4px 12px rgba(234, 88, 12, 0.08);
-  }
-  .mr-banner-head {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-  }
-  .mr-banner-title {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-weight: 800;
-    font-size: 0.88rem;
-    color: #9a3412;
-  }
-  .mr-banner-count {
-    background: #dc2626;
-    color: #fff;
-    border-radius: 99px;
-    padding: 2px 9px;
-    font-size: 0.75rem;
-    font-weight: 800;
-  }
-  .mr-chip-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-top: 8px;
-    max-height: 115px;
-    overflow-y: auto;
-  }
-  .mr-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: #ffffff;
-    border: 1px solid #fed7aa;
-    border-left: 3px solid #ea580c;
-    border-radius: 8px;
-    padding: 4px 9px;
-    font-size: 0.76rem;
-    color: #1e293b;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
-  }
-  .mr-chip:hover {
-    border-color: #ea580c;
-    background: #fffbeb;
-    transform: translateY(-1px);
-  }
-  .mr-chip .mr-slot {
-    font-weight: 800;
-    color: #c2410c;
-    white-space: nowrap;
-  }
-  .mr-chip .mr-mon {
-    font-weight: 700;
-    color: #0f172a;
-  }
-  .mr-chip .mr-lop {
-    color: #475569;
-    font-weight: 600;
-  }
-  .mr-chip .mr-quick-btn {
-    background: #fee2e2;
-    color: #b91c1c;
-    border-radius: 5px;
-    padding: 1px 6px;
-    font-weight: 800;
-    font-size: 0.68rem;
-    white-space: nowrap;
-  }
-  .mr-chip:hover .mr-quick-btn {
-    background: #dc2626;
-    color: #ffffff;
-  }
-
-  /* 3. Nút Badge trên thanh công cụ Ma trận TKB */
-  #btnToolbarMissingRoom {
-    font-weight: 800;
-    border-radius: 8px;
-    font-size: 0.78rem;
-    padding: 4px 10px;
-    min-height: 30px;
-  }
-  #btnToolbarMissingRoom.has-missing {
-    background: #fef2f2;
-    color: #dc2626;
-    border: 1.5px solid #fca5a5;
-    animation: pulseMissingRoom 2s infinite;
-  }
-  #btnToolbarMissingRoom.all-ok {
-    background: #ecfdf5;
-    color: #059669;
-    border: 1px solid #a7f3d0;
-  }
-</style>
-
-<!-- Modal Quản lý & Điền Phòng Nhanh Hàng Loạt -->
-<div class="modal fade" id="modalMissingRoomsManager" tabindex="-1" aria-hidden="true">
+<!-- =====================================================================
+     MODALS & LOGIC: XEM NHIỀU ĐỀ THI + LỊCH SỬ HOẠT ĐỘNG & HOÀN TÁC ĐA TÀI KHOẢN
+     ===================================================================== -->
+<div class="modal fade" id="adminExamFilesModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content" style="border-top: 4px solid #ea580c;">
-      <div class="modal-header" style="background: #fff7ed;">
-        <div>
-          <h5 class="modal-title fw-bold" style="color: #9a3412;">
-            <i class="fas fa-door-open text-danger me-2"></i>РА̀ SOÁT & XẾP PHÒNG NHANH CÁC BUỔI CHƯA CÓ PHÒNG
-          </h5>
-          <small class="text-muted" id="mrModalSubtitle">Hệ thống tự động kiểm tra trùng phòng 3 tầng trước khi lưu</small>
-        </div>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+      <div class="modal-header bg-primary text-white" style="border-radius: 16px 16px 0 0;">
+        <h5 class="modal-title fw-bold"><i class="fas fa-folder-open me-2"></i>Danh sách Đề thi đã nộp</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
       </div>
       <div class="modal-body p-3">
-        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3 pb-2 border-bottom">
-          <div class="btn-group btn-group-sm" role="group">
-            <button type="button" class="btn btn-outline-primary active fw-bold" id="btnMrScopeWeek" onclick="switchMissingRoomModalScope('WEEK')">
-              <i class="fas fa-calendar-week me-1"></i> Tuần đang xem
-            </button>
-            <button type="button" class="btn btn-outline-primary fw-bold" id="btnMrScopeAll" onclick="switchMissingRoomModalScope('ALL')">
-              <i class="fas fa-globe me-1"></i> Toàn bộ các tuần sắp tới
-            </button>
+        <div class="mb-3 p-2 rounded bg-light border d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <div>
+            <div class="fw-bold text-primary" id="examModalTitle">Lớp - Môn</div>
+            <small class="text-muted" id="examModalSub">Danh sách tất cả các file đề thi giảng viên đã tải lên</small>
           </div>
-          <div class="d-flex align-items-center gap-2">
-            <div class="input-group input-group-sm" style="max-width: 240px;">
-              <input type="text" id="mrQuickFillAllInp" class="form-control" placeholder="Điền nhanh 1 phòng...">
-              <button class="btn btn-outline-secondary fw-bold" type="button" onclick="applyQuickRoomToAllEmpty()">Điền tất cả</button>
-            </div>
-          </div>
+          <button type="button" class="btn btn-sm btn-success fw-bold" id="btnOpenAllExams"><i class="fas fa-external-link-alt me-1"></i> Mở tất cả</button>
         </div>
-
-        <div class="table-responsive border rounded" style="max-height: 52vh;">
-          <table class="table table-sm table-hover align-middle mb-0">
-            <thead class="table-light" style="position: sticky; top: 0; z-index: 2;">
-              <tr>
-                <th style="width: 135px;">Thứ / Ngày · Ca</th>
-                <th>Môn học & Lớp/Nhóm</th>
-                <th style="width: 150px;">Giảng viên</th>
-                <th style="width: 165px;">Nhập Phòng Học</th>
-                <th style="width: 75px;" class="text-center">Lưu</th>
-              </tr>
-            </thead>
-            <tbody id="mrModalTableBody">
-              <tr><td colspan="5" class="text-center py-4 text-muted">Đang kiểm tra dữ liệu...</td></tr>
-            </tbody>
-          </table>
-        </div>
+        <div id="examModalList" class="d-flex flex-column gap-2"></div>
       </div>
-      <div class="modal-footer bg-light d-flex justify-content-between">
-        <span class="small text-muted"><i class="fas fa-shield-alt text-success me-1"></i>Tự động chặn nếu phòng đã có lớp khác học cùng ca</span>
-        <div class="d-flex gap-2">
-          <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Đóng</button>
-          <button type="button" class="btn btn-primary btn-sm fw-bold px-3" id="btnSaveAllMissingRooms" onclick="saveAllMissingRoomsInModal()">
-            <i class="fas fa-save me-1"></i> Lưu Tất Cả Phòng Đã Nhập
-          </button>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="activityHistoryModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+      <div class="modal-header text-white" style="background: linear-gradient(135deg, #1e293b, #334155); border-radius: 16px 16px 0 0;">
+        <div>
+          <h5 class="modal-title fw-bold mb-0"><i class="fas fa-history me-2"></i>Lịch sử Hoạt động &amp; Hoàn tác (Lui lại)</h5>
+          <small class="opacity-75" id="actHistSubtitle">Xem lại các thao tác gần đây và hoàn tác về trạng thái trước đó</small>
+        </div>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
+      </div>
+      <div class="modal-body p-3">
+        <div class="row g-2 mb-3 align-items-center">
+          <div class="col-12 col-md-4" id="actFilterUserWrap" style="display:none;">
+            <select id="actFilterUser" class="form-select form-select-sm" onchange="renderActivityHistoryList()">
+              <option value="ALL">Tất cả tài khoản</option>
+            </select>
+          </div>
+          <div class="col-6 col-md-3">
+            <select id="actFilterStatus" class="form-select form-select-sm" onchange="renderActivityHistoryList()">
+              <option value="ALL">Tất cả trạng thái</option>
+              <option value="ACTIVE">Có thể hoàn tác</option>
+              <option value="UNDONE">Đã hoàn tác</option>
+            </select>
+          </div>
+          <div class="col-6 col-md-3">
+            <input type="text" id="actSearchTxt" class="form-control form-control-sm" placeholder="Tìm theo lớp, môn, thao tác..." oninput="renderActivityHistoryList()">
+          </div>
+          <div class="col-12 col-md-2 text-end">
+            <button type="button" class="btn btn-sm btn-outline-primary w-100" onclick="fetchActivityHistoryList()"><i class="fas fa-sync-alt me-1"></i> Tải lại</button>
+          </div>
+        </div>
+        <div id="actHistoryBody" style="min-height: 220px;">
+          <div class="text-center text-muted py-5"><i class="fas fa-spinner fa-spin fa-2x mb-2"></i><div>Đang tải lịch sử...</div></div>
         </div>
       </div>
     </div>
@@ -10985,761 +10327,452 @@ var wb = XLSX.utils.book_new();
 </div>
 
 <script>
-(function() {
-  // 1. Hàm đọc ngày ISO an toàn theo giờ địa phương (12:00 trưa) chống lệch múi giờ
-  function parseIsoLocalSafe_(isoStr) {
-    if (!isoStr) return new Date();
-    var p = String(isoStr).split('-');
-    if (p.length === 3) return new Date(+p[0], +p[1] - 1, +p[2], 12, 0, 0);
-    return new Date(isoStr);
-  }
-
-  function getMondayIsoSafe_(dateStr) {
-    var d = dateStr ? parseIsoLocalSafe_(dateStr) : new Date();
-    if (isNaN(d.getTime())) d = new Date();
-    var day = d.getDay();
-    var diff = d.getDate() - day + (day === 0 ? -6 : 1);
-    d.setDate(diff);
-    return toLocalIsoDate(d);
-  }
-
-  // Ghi đè an toàn changeWeek & forceMondayAndLoadAdmin để không bao giờ lệch thứ/ngày
-  window.changeWeek = function(days, inputId) {
-    var inputEl = document.getElementById(inputId);
-    if (!inputEl) return;
-    var base = inputEl.value ? parseIsoLocalSafe_(inputEl.value) : new Date();
-    base.setDate(base.getDate() + days);
-    inputEl.value = toLocalIsoDate(base);
-    if (inputId === 'studentWeekInput' && typeof fetchStudentTimetableWeb === 'function') fetchStudentTimetableWeb();
-    if (inputId === 'gvWeekInput' && typeof loadLecturerPersonalTimetable === 'function') loadLecturerPersonalTimetable();
-    if (inputId === 'adminWeekInput' && typeof loadAdminTimetableMatrix === 'function') loadAdminTimetableMatrix();
-  };
-
-  window.forceMondayAndLoadAdmin = function() {
-    var inputEl = document.getElementById('adminWeekInput');
-    if (!inputEl) return;
-    inputEl.value = getMondayIsoSafe_(inputEl.value);
-    if (typeof loadAdminTimetableMatrix === 'function') loadAdminTimetableMatrix();
-  };
-
-  // 2. Hàm kiểm tra chuỗi phòng có phải là "Chưa xếp" hay không
-  window.isRoomUnassignedUI = function(phong) {
-    if (phong === null || phong === undefined) return true;
-    var s = String(phong).replace(/\s+/g, ' ').trim().toUpperCase();
-    if (!s) return true;
-    var bad = ["CHƯA XẾP", "CHUA XEP", "CHƯA CÓ", "CHUA CO", "CHƯA PHÒNG", "CHUA PHONG", "CHƯA", "CHUA", "TRỐNG", "TRONG", "NONE", "TBD", "-", "?"];
-    return bad.indexOf(s) !== -1;
-  };
-
-  function thuNameFromIso_(iso) {
-    var d = parseIsoLocalSafe_(iso);
-    if (isNaN(d.getTime())) return "";
-    return ["CN", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"][d.getDay()];
-  }
-
-  function fmtShortVN_(iso) {
-    var p = String(iso || "").split("-");
-    return p.length === 3 ? (p[2] + "/" + p[1]) : String(iso || "");
-  }
-
-  // 3. Khởi tạo Thanh Banner & Nút Cảnh Báo trên thanh công cụ Ma Trận TKB
-  function ensureMissingRoomContainers_() {
-    var wrapper = document.getElementById('adminMatrixWrapper');
-    if (!wrapper) return;
-
-    // Tạo Banner ngay phía trên bảng Ma trận
-    if (!document.getElementById('missingRoomBannerBox')) {
-      var banner = document.createElement('div');
-      banner.id = 'missingRoomBannerBox';
-      wrapper.parentNode.insertBefore(banner, wrapper);
-    }
-
-    // Tạo nút Badge trên thanh công cụ (cạnh nút Khóa Lịch / Xóa Lịch Môn)
-    var lockBtn = document.getElementById('btnLockToggle');
-    if (lockBtn && !document.getElementById('btnToolbarMissingRoom')) {
-      var btn = document.createElement('button');
-      btn.type = 'button';
-      btn.id = 'btnToolbarMissingRoom';
-      btn.className = 'btn btn-sm all-ok';
-      btn.onclick = function() { openMissingRoomsModal('WEEK'); };
-      lockBtn.parentNode.insertBefore(btn, lockBtn.nextSibling);
-    }
-  }
-
-  // 4. Quét dữ liệu Ma Trận hiện tại & Làm nổi bật các ô Chưa Xếp Phòng
-  window.scanAndRenderMissingRooms = function() {
-    try {
-      ensureMissingRoomContainers_();
-      var list = Array.isArray(window.globalMatrixList) ? window.globalMatrixList : [];
-      var missingList = [];
-
-      // 4.1. Tô màu & gắn nút gán phòng trực tiếp lên từng ô lịch trong bảng Admin
-      var adminCells = document.querySelectorAll('#adminMatrixTableHtml .matrix-cell');
-      adminCells.forEach(function(cell) {
-        var reschedBtn = cell.querySelector('button[data-rowidx]');
-        var rowIdx = reschedBtn ? parseInt(reschedBtn.getAttribute('data-rowidx'), 10) : 0;
-        var item = rowIdx ? list.find(function(x) { return Number(x.rowIdx) === rowIdx; }) : null;
-
-        var phongVal = item ? item.phong : (reschedBtn ? reschedBtn.getAttribute('data-phong') : '');
-        var isMissing = isRoomUnassignedUI(phongVal);
-
-        // Xóa nhãn cũ nếu có trước khi vẽ lại
-        var oldTag = cell.querySelector('.missing-room-corner-tag');
-        if (oldTag) oldTag.remove();
-
-        if (isMissing) {
-          cell.classList.add('missing-room-cell');
-          if (rowIdx) cell.setAttribute('data-missing-rowidx', rowIdx);
-
-          var headerEl = cell.querySelector('.cell-header') || cell;
-          var badgeTag = document.createElement('div');
-          badgeTag.className = 'missing-room-corner-tag';
-          badgeTag.innerHTML = '<i class="fas fa-exclamation-triangle"></i> CHƯA XẾP PHÒNG';
-          headerEl.insertBefore(badgeTag, headerEl.firstChild);
-
-          // Biến dòng P: Chưa xếp thành nút bấm gán phòng siêu tốc
-          var divs = headerEl.querySelectorAll('div');
-          divs.forEach(function(d) {
-            if (d.innerText && d.innerText.indexOf('P:') !== -1) {
-              d.className = 'missing-room-btn-inline';
-              d.title = 'Bấm vào đây để nhập phòng học nhanh cho buổi này';
-              d.innerHTML = '<i class="fas fa-door-open"></i> P: Chưa xếp <span style="text-decoration:underline;font-size:0.68rem;">(Gán phòng)</span>';
-              d.onclick = function(ev) {
-                ev.stopPropagation();
-                openSingleRoomQuickPrompt(rowIdx);
-              };
-            }
-          });
-        } else {
-          cell.classList.remove('missing-room-cell');
-          cell.removeAttribute('data-missing-rowidx');
-        }
-      });
-
-      // Tô màu cảnh báo trên lịch cá nhân Giảng viên (nếu có buổi chưa xếp phòng)
-      var gvCells = document.querySelectorAll('#gvMatrixTableHtml .matrix-cell');
-      gvCells.forEach(function(cell) {
-        if (cell.innerText && cell.innerText.indexOf('P: Chưa xếp') !== -1) {
-          cell.classList.add('missing-room-cell');
-        }
-      });
-
-      // 4.2. Lọc danh sách các buổi chưa có phòng từ globalMatrixList
-      list.forEach(function(item) {
-        if (isRoomUnassignedUI(item.phong)) {
-          missingList.push(item);
-        }
-      });
-
-      var caOrderMap = { "Ca Sáng": 1, "Ca Chiều": 2, "Ca Tối": 3 };
-      missingList.sort(function(a, b) {
-        if (a.ngayIso !== b.ngayIso) return String(a.ngayIso).localeCompare(String(b.ngayIso));
-        return (caOrderMap[a.ca] || 9) - (caOrderMap[b.ca] || 9);
-      });
-
-      // 4.3. Cập nhật nút Badge trên thanh công cụ
-      var btnToolbar = document.getElementById('btnToolbarMissingRoom');
-      if (btnToolbar) {
-        if (missingList.length > 0) {
-          btnToolbar.className = 'btn btn-sm has-missing';
-          btnToolbar.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i> Chưa xếp phòng: <b>' + missingList.length + ' buổi</b>';
-        } else {
-          btnToolbar.className = 'btn btn-sm all-ok';
-          btnToolbar.innerHTML = '<i class="fas fa-check-circle me-1"></i> Đủ phòng (Quét toàn khóa)';
-        }
-      }
-
-      // 4.4. Cập nhật Thanh Banner Cảnh Báo phía trên bảng Ma trận
-      var banner = document.getElementById('missingRoomBannerBox');
-      if (!banner) return;
-
-      if (missingList.length === 0) {
-        banner.style.display = 'none';
-        banner.innerHTML = '';
-        return;
-      }
-
-      var chipsHtml = missingList.map(function(it) {
-        var gvName = it.gvName || it.gvId || '';
-        var slotTxt = thuNameFromIso_(it.ngayIso) + ' (' + fmtShortVN_(it.ngayIso) + ') · ' + String(it.ca).replace('Ca ', '');
-        return '<div class="mr-chip" onclick="focusAndQuickAssignRoom(' + it.rowIdx + ')" title="Bấm để nhảy tới ô lịch và gán phòng">' +
-          '<span class="mr-slot"><i class="fas fa-clock me-1"></i>' + escapeHtml(slotTxt) + '</span>' +
-          '<span class="mr-mon">' + escapeHtml(it.mon) + '</span>' +
-          '<span class="mr-lop">(' + escapeHtml(it.lop) + ' · ' + escapeHtml(gvName) + ')</span>' +
-          '<span class="mr-quick-btn"><i class="fas fa-pen"></i> Gán phòng</span>' +
-        '</div>';
-      }).join('');
-
-      banner.innerHTML =
-        '<div class="mr-banner-head">' +
-          '<div class="mr-banner-title">' +
-            '<i class="fas fa-bell fa-shake text-danger fs-6"></i>' +
-            '<span>CẢNH BÁO: Phát hiện <span class="mr-banner-count">' + missingList.length + ' buổi học</span> chưa xếp phòng trong tuần đang xem!</span>' +
-          '</div>' +
-          '<div class="d-flex gap-2">' +
-            '<button type="button" class="btn btn-sm btn-danger py-1 px-3 fw-bold" style="min-height:28px;font-size:0.76rem;" onclick="openMissingRoomsModal(\'WEEK\')">' +
-              '<i class="fas fa-door-open me-1"></i> Điền phòng hàng loạt (' + missingList.length + ')' +
-            '</button>' +
-            '<button type="button" class="btn btn-sm btn-outline-dark py-1 px-2 fw-bold" style="min-height:28px;font-size:0.75rem;" onclick="openMissingRoomsModal(\'ALL\')">' +
-              '<i class="fas fa-search me-1"></i> Quét các tuần tới' +
-            '</button>' +
-          '</div>' +
-        '</div>' +
-        '<div class="mr-chip-list">' + chipsHtml + '</div>';
-      banner.style.display = 'block';
-    } catch (e) {
-      console.error("scanAndRenderMissingRooms error:", e);
-    }
-  };
-
-  // 5. Nhảy mượt tới ô lịch bị thiếu phòng & bật khung nhập phòng nhanh
-  window.focusAndQuickAssignRoom = function(rowIdx) {
-    var cell = document.querySelector('#adminMatrixTableHtml .matrix-cell[data-missing-rowidx="' + rowIdx + '"]');
-    if (!cell) {
-      var btn = document.querySelector('#adminMatrixTableHtml button[data-rowidx="' + rowIdx + '"]');
-      if (btn) cell = btn.closest('.matrix-cell');
-    }
-    if (cell) {
-      cell.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
-      cell.classList.remove('missing-room-focus-flash');
-      void cell.offsetWidth;
-      cell.classList.add('missing-room-focus-flash');
-    }
-    setTimeout(function() { openSingleRoomQuickPrompt(rowIdx); }, 350);
-  };
-
-  // 6. Hộp thoại nhập phòng siêu tốc cho 1 buổi học khi bấm trực tiếp trên ô lịch
-  window.openSingleRoomQuickPrompt = function(rowIdx) {
-    var list = Array.isArray(window.globalMatrixList) ? window.globalMatrixList : [];
-    var item = list.find(function(x) { return Number(x.rowIdx) === Number(rowIdx); });
-    if (!item) {
-      var btn = document.querySelector('#adminMatrixTableHtml button[data-rowidx="' + rowIdx + '"]');
-      if (btn) {
-        item = {
-          rowIdx: Number(rowIdx),
-          ngayIso: btn.getAttribute('data-ngay'),
-          ca: btn.getAttribute('data-ca'),
-          lop: btn.getAttribute('data-lop'),
-          mon: btn.getAttribute('data-mon'),
-          gvId: btn.getAttribute('data-gv'),
-          gvName: btn.getAttribute('data-gv')
-        };
-      }
-    }
-    if (!item) return;
-
-    var ngayVN = String(item.ngayIso || '').split('-').reverse().join('/');
-    Swal.fire({
-      title: '🚪 Xếp Phòng Học Nhanh',
-      html:
-        '<div class="text-start p-3 rounded mb-3" style="background:#fff7ed;border:1px solid #fed7aa;font-size:0.86rem;line-height:1.5;">' +
-          '<div><b class="text-primary">' + escapeHtml(item.mon) + '</b></div>' +
-          '<div>👥 <b>Lớp/Nhóm:</b> ' + escapeHtml(item.lop) + '</div>' +
-          '<div>👨🏫 <b>Giảng viên:</b> ' + escapeHtml(item.gvName || item.gvId) + '</div>' +
-          '<div>🗓️ <b>Thời gian:</b> <span class="text-danger fw-bold">' + escapeHtml(item.ca) + ' — ' + thuNameFromIso_(item.ngayIso) + ' (' + ngayVN + ')</span></div>' +
-        '</div>' +
-        '<div class="text-start">' +
-          '<label class="form-label fw-bold text-dark">Nhập tên Phòng học / Xưởng thực hành:</label>' +
-          '<input type="text" id="swalQuickRoomInput" class="form-control border-primary fw-bold text-center fs-6" placeholder="VD: 502, 606, Xưởng, Doanh nghiệp...">' +
-          '<small class="text-muted d-block mt-1">Hệ thống sẽ kiểm tra tự động để đảm bảo phòng này chưa có lớp khác học cùng ca.</small>' +
-        '</div>',
-      showCancelButton: true,
-      confirmButtonText: '<i class="fas fa-save me-1"></i> Lưu Phòng Ngay',
-      cancelButtonText: 'Hủy',
-      didOpen: function() {
-        var inp = document.getElementById('swalQuickRoomInput');
-        if (inp) {
-          inp.focus();
-          inp.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') Swal.clickConfirm();
-          });
-        }
-      },
-      preConfirm: function() {
-        var val = document.getElementById('swalQuickRoomInput').value.trim();
-        if (!val || isRoomUnassignedUI(val)) {
-          Swal.showValidationMessage('Vui lòng nhập tên phòng học hợp lệ!');
-          return false;
-        }
-        return val;
-      }
-    }).then(function(res) {
-      if (res.isConfirmed && res.value) {
-        showLoading('Đang kiểm tra trùng phòng & lưu...');
-        google.script.run.withSuccessHandler(function(out) {
-          if (out && out.success && out.updatedCount > 0) {
-            Swal.fire({ icon: 'success', title: 'Đã gán phòng: ' + res.value, timer: 1400, showConfirmButton: false });
-            loadAdminTimetableMatrix(true);
-          } else {
-            var errMsg = (out && out.errors && out.errors.length) ? out.errors.join('<br>') : (out && out.message ? out.message : 'Không thể lưu phòng');
-            Swal.fire({ icon: 'error', title: 'Trùng phòng / Không thể lưu!', html: errMsg });
-          }
-        }).withFailureHandler(showError).quickAssignRoomsBulk([{
-          rowIdx: item.rowIdx,
-          ngayIso: item.ngayIso,
-          ca: item.ca,
-          lop: item.lop,
-          mon: item.mon,
-          gvId: item.gvId,
-          newPhong: res.value
-        }]);
-      }
+(function(){
+  function escH(s){
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
     });
+  }
+  function getActorObj(){
+    var u = (typeof currentUser !== 'undefined' && currentUser) ? currentUser : (localStorage.getItem('lms_user') || '');
+    var r = (typeof userRole !== 'undefined' && userRole) ? userRole : (localStorage.getItem('lms_role') || '');
+    var nEl = document.getElementById('uName');
+    var n = (nEl && nEl.innerText && nEl.innerText !== 'User') ? nEl.innerText : (localStorage.getItem('lms_name') || u);
+    return { user: String(u || ''), name: String(n || u || ''), role: String(r || '') };
+  }
+
+  window.updateQuickUndoBtn = function(){
+    var btnQ = document.getElementById('btnQuickUndo');
+    var btnH = document.getElementById('btnActivityHistory');
+    var actor = getActorObj();
+    var loggedIn = !!(actor.user && actor.role && (typeof IS_STUDENT_MODE === 'undefined' || !IS_STUDENT_MODE));
+    if (btnH) btnH.style.display = loggedIn ? 'inline-flex' : 'none';
+    if (btnQ) btnQ.style.display = (loggedIn && window.__lastActionId) ? 'inline-flex' : 'none';
   };
 
-  // 7. Mở Modal Quản lý & Điền Phòng Hàng Loạt (Theo tuần hoặc Toàn bộ các tuần sắp tới)
-  var currentModalMissingItems_ = [];
-  var currentModalScope_ = 'WEEK';
+  // Gắn theo dõi đăng nhập / phân quyền / đăng xuất để luôn hiện nút Lịch sử & Lui lại
+  var _prevApplyRole = window.applyUserRoleLogic;
+  if (typeof _prevApplyRole === 'function') {
+    window.applyUserRoleLogic = function(role){
+      var res = _prevApplyRole.apply(this, arguments);
+      setTimeout(window.updateQuickUndoBtn, 50);
+      return res;
+    };
+  }
+  var _prevLogout = window.doLogout;
+  if (typeof _prevLogout === 'function') {
+    window.doLogout = function(){
+      window.__lastActionId = '';
+      window.__lastActionFunc = '';
+      window.updateQuickUndoBtn();
+      return _prevLogout.apply(this, arguments);
+    };
+  }
+  document.addEventListener('DOMContentLoaded', function(){
+    setTimeout(window.updateQuickUndoBtn, 300);
+  });
 
-  window.openMissingRoomsModal = function(scope) {
-    currentModalScope_ = scope || 'WEEK';
-    var modalEl = document.getElementById('modalMissingRoomsManager');
-    var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-    modal.show();
-    switchMissingRoomModalScope(currentModalScope_);
-  };
+  // Modal xem tất cả đề thi đã nộp (fix lỗi chỉ thấy 1 đề khi giảng viên nộp nhiều đề)
+  window.openAdminExamFilesModal = function(t){
+    if (!t || !t.link) return;
+    var links = String(t.link).split('||').map(function(s){ return s.trim(); }).filter(Boolean);
+    var names = String(t.linkNames || '').split('||').map(function(s){ return s.trim(); });
+    document.getElementById('examModalTitle').textContent = (t.lop || '') + ' — ' + (t.mon || '');
+    document.getElementById('examModalSub').textContent = 'Tổng cộng ' + links.length + ' file đề thi (GV: ' + (t.gv || t.user || '') + ')';
 
-  window.switchMissingRoomModalScope = function(scope) {
-    currentModalScope_ = scope;
-    document.getElementById('btnMrScopeWeek').classList.toggle('active', scope === 'WEEK');
-    document.getElementById('btnMrScopeAll').classList.toggle('active', scope === 'ALL');
+    var html = links.map(function(lnk, idx){
+      var fName = names[idx] || ('Đề thi số ' + (idx + 1));
+      return '<div class="d-flex align-items-center justify-content-between p-2 border rounded bg-white gap-2">' +
+        '<div class="d-flex align-items-center gap-2 overflow-hidden">' +
+          '<span class="badge bg-primary rounded-pill">Đề ' + (idx + 1) + '</span>' +
+          '<span class="fw-semibold text-truncate" title="' + escH(fName) + '">' + escH(fName) + '</span>' +
+        '</div>' +
+        '<div class="d-flex gap-2 flex-shrink-0">' +
+          '<button type="button" class="btn btn-sm btn-outline-secondary" onclick="navigator.clipboard && navigator.clipboard.writeText(\'' + escH(lnk).replace(/'/g, "\\'") + '\').then(function(){Swal.fire({toast:true,position:\'top-end\',icon:\'success\',title:\'Đã sao chép link\',showConfirmButton:false,timer:1200})})"><i class="fas fa-copy"></i></button>' +
+          '<a href="' + escH(lnk) + '" target="_blank" rel="noopener" class="btn btn-sm btn-primary"><i class="fas fa-external-link-alt me-1"></i>Mở file</a>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+    document.getElementById('examModalList').innerHTML = html;
 
-    var tbody = document.getElementById('mrModalTableBody');
-    tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-primary fw-bold"><span class="spinner-border spinner-border-sm me-2"></span>Đang quét các buổi chưa có phòng...</td></tr>';
+    var btnAll = document.getElementById('btnOpenAllExams');
+    btnAll.onclick = function(){
+      links.forEach(function(lnk){ window.open(lnk, '_blank', 'noopener'); });
+    };
 
-    var weekVal = document.getElementById('adminWeekInput') ? document.getElementById('adminWeekInput').value : '';
-    var scanAll = (scope === 'ALL');
-
-    google.script.run.withSuccessHandler(function(res) {
-      if (!res || !res.success) {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-danger">Lỗi tải dữ liệu: ' + escapeHtml(res ? res.message : '') + '</td></tr>';
-        return;
-      }
-      currentModalMissingItems_ = res.data || [];
-      renderMissingRoomsModalTable_();
-    }).withFailureHandler(function(err) {
-      tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-danger">Lỗi kết nối: ' + escapeHtml(err.message) + '</td></tr>';
-    }).getMissingRoomsReport(weekVal, scanAll);
-  };
-
-  function renderMissingRoomsModalTable_() {
-    var tbody = document.getElementById('mrModalTableBody');
-    var sub = document.getElementById('mrModalSubtitle');
-    if (sub) {
-      sub.innerText = currentModalScope_ === 'ALL'
-        ? ('Đang hiển thị ' + currentModalMissingItems_.length + ' buổi chưa có phòng từ hôm nay trở đi trên toàn Khoa')
-        : ('Đang hiển thị ' + currentModalMissingItems_.length + ' buổi chưa có phòng trong tuần đang chọn');
+    var modalEl = document.getElementById('adminExamFilesModal');
+    if (window.bootstrap && bootstrap.Modal) {
+      bootstrap.Modal.getOrCreateInstance(modalEl).show();
     }
+  };
 
-    if (currentModalMissingItems_.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-success fw-bold"><i class="fas fa-check-circle fs-2 d-block mb-2"></i>Tuyệt vời! Tất cả các buổi học đều đã được xếp phòng đầy đủ.</td></tr>';
+  var actCache = { items: [], actors: [] };
+
+  window.openActivityHistoryModal = function(){
+    var actor = getActorObj();
+    var isAdmin = String(actor.role || '').toUpperCase() === 'ADMIN';
+    var wrap = document.getElementById('actFilterUserWrap');
+    if (wrap) wrap.style.display = isAdmin ? 'block' : 'none';
+    document.getElementById('actHistSubtitle').textContent = isAdmin
+      ? 'Quản trị viên: Xem và hoàn tác thao tác của tất cả tài khoản'
+      : 'Giảng viên (' + (actor.name || actor.user) + '): Xem và hoàn tác thao tác của bạn';
+    var modalEl = document.getElementById('activityHistoryModal');
+    if (window.bootstrap && bootstrap.Modal) {
+      bootstrap.Modal.getOrCreateInstance(modalEl).show();
+    }
+    window.fetchActivityHistoryList();
+  };
+
+  window.fetchActivityHistoryList = function(){
+    var body = document.getElementById('actHistoryBody');
+    if (body) body.innerHTML = '<div class="text-center text-muted py-5"><i class="fas fa-spinner fa-spin fa-2x mb-2"></i><div>Đang tải lịch sử hoạt động...</div></div>';
+    var actor = getActorObj();
+    google.script.run
+      .withSuccessHandler(function(res){
+        if (!res || !res.success) {
+          body.innerHTML = '<div class="alert alert-danger">' + escH((res && res.message) || 'Không tải được lịch sử') + '</div>';
+          return;
+        }
+        actCache.items = res.items || [];
+        actCache.actors = res.actors || [];
+
+        var sel = document.getElementById('actFilterUser');
+        if (sel) {
+          var prev = sel.value || 'ALL';
+          var opts = '<option value="ALL">Tất cả tài khoản (' + actCache.actors.length + ')</option>';
+          actCache.actors.forEach(function(a){
+            opts += '<option value="' + escH(a.user) + '">' + escH(a.name || a.user) + ' (' + escH(a.user) + ' - ' + escH(a.role || '') + ')</option>';
+          });
+          sel.innerHTML = opts;
+          sel.value = prev;
+        }
+        window.renderActivityHistoryList();
+      })
+      .withFailureHandler(function(err){
+        if (body) body.innerHTML = '<div class="alert alert-danger">Lỗi kết nối: ' + escH(err && err.message ? err.message : err) + '</div>';
+      })
+      .getActivityHistory({ actor: actor, limit: 150 });
+  };
+
+  window.renderActivityHistoryList = function(){
+    var body = document.getElementById('actHistoryBody');
+    if (!body) return;
+    var actor = getActorObj();
+    var isAdmin = String(actor.role || '').toUpperCase() === 'ADMIN';
+    var fUser = isAdmin ? ((document.getElementById('actFilterUser') || {}).value || 'ALL') : 'ALL';
+    var fSt = (document.getElementById('actFilterStatus') || {}).value || 'ALL';
+    var q = String((document.getElementById('actSearchTxt') || {}).value || '').toLowerCase().trim();
+
+    var list = actCache.items.filter(function(it){
+      if (fUser !== 'ALL' && String(it.actorUser).toLowerCase() !== String(fUser).toLowerCase()) return false;
+      if (fSt === 'ACTIVE' && !it.canUndo) return false;
+      if (fSt === 'UNDONE' && String(it.status).indexOf('UNDONE') !== 0) return false;
+      if (q) {
+        var hay = (it.description + ' ' + it.actorName + ' ' + it.actorUser + ' ' + it.sheets + ' ' + it.timestamp).toLowerCase();
+        if (hay.indexOf(q) === -1) return false;
+      }
+      return true;
+    });
+
+    if (!list.length) {
+      body.innerHTML = '<div class="text-center text-muted py-5"><i class="fas fa-inbox fa-2x mb-2 opacity-50"></i><div>Chưa có lịch sử thao tác nào phù hợp.</div></div>';
       return;
     }
 
-    var html = '';
-    currentModalMissingItems_.forEach(function(it, idx) {
-      var examBadge = it.isExam ? '<span class="badge bg-danger ms-1">LỊCH THI</span>' : '';
-      html += '<tr id="mrRow_' + idx + '">' +
-        '<td>' +
-          '<div class="fw-bold text-danger">' + escapeHtml(it.thu) + ', ' + escapeHtml(it.ngayVN) + '</div>' +
-          '<span class="badge bg-warning-soft text-dark">' + escapeHtml(it.ca) + '</span>' +
-        '</td>' +
-        '<td>' +
-          '<div class="fw-bold text-dark">' + escapeHtml(it.mon) + examBadge + '</div>' +
-          '<div class="small text-muted"><i class="fas fa-users me-1"></i>' + escapeHtml(it.lop) + '</div>' +
-        '</td>' +
-        '<td><span class="fw-semibold text-primary"><i class="fas fa-user-tie me-1"></i>' + escapeHtml(it.gvName) + '</span></td>' +
-        '<td>' +
-          '<input type="text" class="form-control form-control-sm border-warning fw-bold text-center mr-room-inp" data-idx="' + idx + '" placeholder="Nhập phòng (VD: 502)">' +
-        '</td>' +
-        '<td class="text-center">' +
-          '<button type="button" class="btn btn-sm btn-outline-success fw-bold py-1 px-2" onclick="saveSingleMissingRoomInModal(' + idx + ')" title="Lưu phòng cho buổi này">' +
-            '<i class="fas fa-check"></i>' +
-          '</button>' +
-        '</td>' +
+    var h = '<div class="table-responsive"><table class="table table-hover align-middle mb-0" style="font-size:0.88rem;">' +
+      '<thead class="table-light"><tr>' +
+      '<th>Thời gian</th><th>Tài khoản</th><th>Nội dung thao tác</th><th>Dữ liệu</th><th>Trạng thái</th><th class="text-end">Hành động</th>' +
+      '</tr></thead><tbody>';
+
+    list.forEach(function(it){
+      var isUndone = String(it.status).indexOf('UNDONE') === 0;
+      var roleBadge = String(it.actorRole).toUpperCase() === 'ADMIN'
+        ? '<span class="badge bg-danger-subtle text-danger border border-danger-subtle">ADMIN</span>'
+        : '<span class="badge bg-primary-subtle text-primary border border-primary-subtle">GV</span>';
+      var statusHtml = isUndone
+        ? '<span class="badge bg-secondary">' + escH(it.status) + '</span>'
+        : (it.canUndo
+            ? '<span class="badge bg-success-subtle text-success border border-success-subtle">Có thể hoàn tác</span>'
+            : '<span class="badge bg-warning-subtle text-dark">Chỉ lưu vết</span>');
+      var btnHtml = it.canUndo
+        ? '<button type="button" class="btn btn-sm btn-outline-warning fw-bold" onclick="executeUndoActivity(\'' + escH(it.actionId) + '\', \'' + escH(it.description).replace(/'/g, "\\'") + '\')"><i class="fas fa-undo-alt me-1"></i>Lui lại</button>'
+        : '<span class="text-muted small">—</span>';
+
+      h += '<tr class="' + (isUndone ? 'opacity-75' : '') + '">' +
+        '<td class="text-nowrap"><small class="text-muted">' + escH(it.timestamp) + '</small></td>' +
+        '<td><div class="fw-semibold">' + escH(it.actorName || it.actorUser) + '</div><div class="small text-muted">' + escH(it.actorUser) + ' ' + roleBadge + '</div></td>' +
+        '<td class="fw-medium">' + escH(it.description) + '</td>' +
+        '<td><small class="badge bg-light text-dark border">' + escH(it.sheets || '-') + '</small></td>' +
+        '<td>' + statusHtml + '</td>' +
+        '<td class="text-end text-nowrap">' + btnHtml + '</td>' +
       '</tr>';
     });
-    tbody.innerHTML = html;
-  }
-
-  window.applyQuickRoomToAllEmpty = function() {
-    var val = document.getElementById('mrQuickFillAllInp').value.trim();
-    if (!val) return;
-    document.querySelectorAll('#mrModalTableBody .mr-room-inp').forEach(function(inp) {
-      if (!inp.value.trim()) inp.value = val;
-    });
+    h += '</tbody></table></div>';
+    body.innerHTML = h;
   };
 
-  window.saveSingleMissingRoomInModal = function(idx) {
-    var it = currentModalMissingItems_[idx];
-    if (!it) return;
-    var inp = document.querySelector('#mrModalTableBody .mr-room-inp[data-idx="' + idx + '"]');
-    var roomVal = inp ? inp.value.trim() : '';
-    if (!roomVal || isRoomUnassignedUI(roomVal)) {
-      return Swal.fire('Lưu ý', 'Vui lòng nhập tên phòng hợp lệ trước khi bấm Lưu!', 'warning');
-    }
-    showLoading('Đang kiểm tra trùng phòng & lưu...');
-    google.script.run.withSuccessHandler(function(out) {
-      if (out && out.success && out.updatedCount > 0) {
-        Swal.close();
-        var tr = document.getElementById('mrRow_' + idx);
-        if (tr) {
-          tr.style.background = '#ecfdf5';
-          tr.innerHTML = '<td colspan="5" class="text-center text-success fw-bold py-2"><i class="fas fa-check-circle me-1"></i>Đã xếp phòng «' + escapeHtml(roomVal) + '» cho môn ' + escapeHtml(it.mon) + ' (' + escapeHtml(it.lop) + ')</td>';
+  function refreshViewsAfterUndo(){
+    try {
+      var actor = getActorObj();
+      if (String(actor.role).toUpperCase() === 'ADMIN') {
+        if (typeof loadAdminDashboard === 'function') loadAdminDashboard(true);
+        if (typeof fetchWeeklyTimetable === 'function' && document.getElementById('tkbArea') && document.getElementById('tkbArea').style.display !== 'none') {
+          fetchWeeklyTimetable();
         }
-        loadAdminTimetableMatrix(true);
       } else {
-        var errMsg = (out && out.errors && out.errors.length) ? out.errors.join('<br>') : (out && out.message ? out.message : 'Lỗi lưu phòng');
-        Swal.fire({ icon: 'error', title: 'Trùng phòng!', html: errMsg });
+        if (typeof loadLecturerPersonalTimetable === 'function' && document.getElementById('gvTimetableContainer') && document.getElementById('gvTimetableContainer').style.display !== 'none') {
+          loadLecturerPersonalTimetable(true);
+        }
       }
-    }).withFailureHandler(showError).quickAssignRoomsBulk([{
-      rowIdx: it.rowIdx, ngayIso: it.ngayIso, ca: it.ca, lop: it.lop, mon: it.mon, gvId: it.gvId, newPhong: roomVal
-    }]);
+      if (typeof loadData === 'function' && document.getElementById('selPhanCong') && document.getElementById('selPhanCong').value) {
+        loadData(false);
+      }
+    } catch (e) {}
+  }
+
+  window.executeUndoActivity = function(actionId, desc){
+    Swal.fire({
+      title: 'Xác nhận hoàn tác (Lui lại)?',
+      html: '<div class="text-start small">Thao tác sẽ được khôi phục về trạng thái ngay trước đó:<br><b class="text-primary">' + escH(desc || actionId) + '</b></div>',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d97706',
+      confirmButtonText: 'Lui lại ngay',
+      cancelButtonText: 'Hủy'
+    }).then(function(r){
+      if (!r.isConfirmed) return;
+      if (typeof showLoading === 'function') showLoading('Đang hoàn tác dữ liệu...');
+      google.script.run
+        .withSuccessHandler(function(res){
+          if (typeof hideLoadingScreen === 'function') hideLoadingScreen();
+          if (res && res.success) {
+            if (window.__lastActionId === actionId) {
+              window.__lastActionId = '';
+              window.updateQuickUndoBtn();
+            }
+            Swal.fire('Đã hoàn tác!', res.message, 'success');
+            if (document.getElementById('activityHistoryModal') && document.getElementById('activityHistoryModal').classList.contains('show')) {
+              window.fetchActivityHistoryList();
+            }
+            refreshViewsAfterUndo();
+          } else {
+            Swal.fire('Không thể hoàn tác', (res && res.message) || 'Lỗi không xác định', 'error');
+          }
+        })
+        .withFailureHandler(function(err){
+          if (typeof hideLoadingScreen === 'function') hideLoadingScreen();
+          Swal.fire('Lỗi', (err && err.message) || 'Lỗi kết nối', 'error');
+        })
+        .undoActivityAction(actionId, getActorObj());
+    });
   };
 
-  window.saveAllMissingRoomsInModal = function() {
-    var updates = [];
-    document.querySelectorAll('#mrModalTableBody .mr-room-inp').forEach(function(inp) {
-      var val = inp.value.trim();
-      var idx = parseInt(inp.getAttribute('data-idx'), 10);
-      var it = currentModalMissingItems_[idx];
-      if (it && val && !isRoomUnassignedUI(val)) {
-        updates.push({
-          rowIdx: it.rowIdx, ngayIso: it.ngayIso, ca: it.ca, lop: it.lop, mon: it.mon, gvId: it.gvId, newPhong: val
-        });
+  window.quickUndoLastAction = function(){
+    if (!window.__lastActionId) {
+      return window.openActivityHistoryModal();
+    }
+    window.executeUndoActivity(window.__lastActionId, 'Thao tác vừa thực hiện (' + (window.__lastActionFunc || '') + ')');
+  };
+
+  // =====================================================================
+  // QUẢN LÝ DANH MỤC TÊN MÔN HỌC (THÊM / XÓA)
+  // =====================================================================
+  function getCurrentMonList(){
+    var sel = document.getElementById('adminSelMon');
+    if (!sel) return [];
+    return Array.prototype.map.call(sel.options, function(o){ return o.value; }).filter(Boolean);
+  }
+
+  function syncMonDropdowns(list){
+    if (!Array.isArray(list)) return;
+    var opts = list.map(function(m){ return '<option value="' + escH(m) + '">' + escH(m) + '</option>'; }).join('');
+    ['adminSelMon', 'mgMon'].forEach(function(id){
+      var el = document.getElementById(id);
+      if (el) {
+        var prev = el.value;
+        el.innerHTML = opts;
+        if (prev && list.indexOf(prev) !== -1) el.value = prev;
       }
     });
+  }
 
-    if (updates.length === 0) {
-      return Swal.fire('Lưu ý', 'Bạn chưa nhập phòng cho buổi học nào trong danh sách!', 'warning');
+  window.openSubjectManagerModal = function(){
+    var modalEl = document.getElementById('subjectManagerModal');
+    if (window.bootstrap && bootstrap.Modal) {
+      bootstrap.Modal.getOrCreateInstance(modalEl).show();
     }
-
-    showLoading('Đang kiểm tra trùng phòng & lưu ' + updates.length + ' buổi...');
-    google.script.run.withSuccessHandler(function(out) {
-      var msgHtml = '<div class="text-start">';
-      if (out.updatedCount > 0) {
-        msgHtml += '<div class="alert alert-success p-2 mb-2"><i class="fas fa-check-circle me-1"></i>Đã lưu phòng thành công cho <b>' + out.updatedCount + ' buổi học</b>!</div>';
-      }
-      if (out.errors && out.errors.length > 0) {
-        msgHtml += '<div class="alert alert-danger p-2 mb-0"><b><i class="fas fa-exclamation-triangle me-1"></i>Các buổi bị trùng phòng (' + out.errors.length + '):</b><ul class="mb-0 ps-3 small mt-1">';
-        out.errors.forEach(function(e) { msgHtml += '<li>' + escapeHtml(e) + '</li>'; });
-        msgHtml += '</ul></div>';
-      }
-      msgHtml += '</div>';
-
-      Swal.fire({
-        title: 'Kết quả xếp phòng',
-        html: msgHtml,
-        icon: (out.errors && out.errors.length > 0) ? 'warning' : 'success'
-      });
-      switchMissingRoomModalScope(currentModalScope_);
-      loadAdminTimetableMatrix(true);
-    }).withFailureHandler(showError).quickAssignRoomsBulk(updates);
+    window.renderSubjectManagerList(getCurrentMonList());
   };
 
-  // 8. Tự động chèn cảnh báo "Chưa có phòng" ngay trong Popup Kết Quả sau khi bấm "Lưu Lịch"
-  var origSwalFire_ = Swal.fire.bind(Swal);
-  Swal.fire = function() {
-    var args = Array.prototype.slice.call(arguments);
-    var p = origSwalFire_.apply(Swal, args);
-    setTimeout(function() {
-      try {
-        var tkbArea = document.getElementById('tkbArea');
-        if (!tkbArea || tkbArea.style.display === 'none') return;
-        var htmlContainer = Swal.getHtmlContainer ? Swal.getHtmlContainer() : null;
-        if (!htmlContainer) return;
-        var titleEl = Swal.getTitle ? Swal.getTitle() : null;
-        var titleTxt = titleEl ? titleEl.innerText.toUpperCase() : '';
-        var isSchedResult = titleTxt.indexOf('KẾT QUẢ') !== -1 || htmlContainer.querySelector('.cf-wrap');
-        if (!isSchedResult || htmlContainer.querySelector('.mr-swal-alert')) return;
+  window.renderSubjectManagerList = function(list){
+    var box = document.getElementById('subjMgrList');
+    if (!box) return;
+    var q = String((document.getElementById('subjMgrSearch') || {}).value || '').toLowerCase().trim();
+    var arr = (list || getCurrentMonList()).filter(function(m){
+      return !q || String(m).toLowerCase().indexOf(q) !== -1;
+    });
+    if (!arr.length) {
+      box.innerHTML = '<div class="text-center text-muted py-4">Không có môn học nào phù hợp.</div>';
+      return;
+    }
+    box.innerHTML = arr.map(function(m, idx){
+      return '<div class="d-flex justify-content-between align-items-center p-2 border-bottom">' +
+        '<div class="fw-medium"><span class="text-muted me-2">' + (idx + 1) + '.</span>' + escH(m) + '</div>' +
+        '<button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteSubjectNameWeb(\'' + escH(m).replace(/'/g, "\\'") + '\')"><i class="fas fa-trash-alt me-1"></i>Xóa</button>' +
+      '</div>';
+    }).join('');
+  };
 
-        // Đợi globalMatrixList cập nhật rồi kiểm tra xem có buổi nào chưa có phòng không
-        setTimeout(function() {
-          var list = Array.isArray(window.globalMatrixList) ? window.globalMatrixList : [];
-          var missing = list.filter(function(x) { return isRoomUnassignedUI(x.phong); });
-          if (missing.length > 0 && Swal.isVisible() && !htmlContainer.querySelector('.mr-swal-alert')) {
-            var box = document.createElement('div');
-            box.className = 'mr-swal-alert mt-3 p-2 rounded text-start';
-            box.style.cssText = 'background:#fff7ed;border:1.5px solid #fdba74;border-left:4px solid #ea580c;font-size:0.82rem;';
-            var itemsHtml = missing.slice(0, 5).map(function(m) {
-              return '<li><b>' + escapeHtml(m.mon) + '</b> (' + escapeHtml(m.lop) + ') — ' + escapeHtml(m.ca) + ', ' + fmtShortVN_(m.ngayIso) + '</li>';
-            }).join('');
-            if (missing.length > 5) itemsHtml += '<li>... và ' + (missing.length - 5) + ' buổi khác</li>';
-            box.innerHTML =
-              '<div class="fw-bold text-danger mb-1"><i class="fas fa-door-open me-1"></i>⚠️ Phát hiện ' + missing.length + ' buổi trong tuần chưa có phòng học:</div>' +
-              '<ul class="mb-2 ps-3 text-dark">' + itemsHtml + '</ul>' +
-              '<button type="button" class="btn btn-sm btn-warning text-dark fw-bold w-100" onclick="Swal.close(); openMissingRoomsModal(\'WEEK\');">' +
-                '<i class="fas fa-pen me-1"></i> Mở bảng điền phòng ngay (' + missing.length + ' buổi)' +
-              '</button>';
-            htmlContainer.appendChild(box);
+  window.addSubjectNameWeb = function(){
+    var inp = document.getElementById('subjMgrNewName');
+    var name = inp ? inp.value.trim() : '';
+    if (!name) return Swal.fire('Lưu ý', 'Vui lòng nhập tên môn học mới!', 'warning');
+    if (typeof showLoading === 'function') showLoading('Đang thêm môn học...');
+    google.script.run
+      .withSuccessHandler(function(res){
+        if (typeof hideLoadingScreen === 'function') hideLoadingScreen();
+        if (res && res.success) {
+          if (inp) inp.value = '';
+          syncMonDropdowns(res.monList);
+          window.renderSubjectManagerList(res.monList);
+          Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: res.message, showConfirmButton: false, timer: 2000 });
+        } else {
+          Swal.fire('Không thể thêm', (res && res.message) || 'Lỗi không xác định', 'error');
+        }
+      })
+      .withFailureHandler(function(err){
+        if (typeof hideLoadingScreen === 'function') hideLoadingScreen();
+        Swal.fire('Lỗi', (err && err.message) || 'Lỗi kết nối', 'error');
+      })
+      .addSubjectName(name);
+  };
+
+  window.deleteSubjectNameWeb = function(name){
+    Swal.fire({
+      title: 'Xóa tên môn học?',
+      html: 'Bạn có chắc muốn xóa môn <b>' + escH(name) + '</b> khỏi danh sách môn học?<br><small class="text-muted">(Không làm mất điểm/TKB cũ và có thể hoàn tác trong Lịch sử)</small>',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#dc2626',
+      confirmButtonText: 'Xóa ngay',
+      cancelButtonText: 'Hủy'
+    }).then(function(r){
+      if (!r.isConfirmed) return;
+      if (typeof showLoading === 'function') showLoading('Đang xóa môn học...');
+      google.script.run
+        .withSuccessHandler(function(res){
+          if (typeof hideLoadingScreen === 'function') hideLoadingScreen();
+          if (res && res.success) {
+            syncMonDropdowns(res.monList);
+            window.renderSubjectManagerList(res.monList);
+            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: res.message, showConfirmButton: false, timer: 2000 });
+          } else {
+            Swal.fire('Lỗi', (res && res.message) || 'Không xóa được', 'error');
           }
-        }, 750);
-      } catch (e) {}
-    }, 80);
-    return p;
+        })
+        .withFailureHandler(function(err){
+          if (typeof hideLoadingScreen === 'function') hideLoadingScreen();
+          Swal.fire('Lỗi', (err && err.message) || 'Lỗi kết nối', 'error');
+        })
+        .deleteSubjectName(name);
+    });
   };
-
-  // 9. Cảnh báo bảo vệ trước khi bấm "Gửi Báo Giảng" hoặc "Mở Khóa Lịch" nếu tuần đó còn buổi chưa xếp phòng
-  var origOpenBaoGiang_ = window.openBaoGiangModal;
-  if (typeof origOpenBaoGiang_ === 'function') {
-    window.openBaoGiangModal = function() {
-      var list = Array.isArray(window.globalMatrixList) ? window.globalMatrixList : [];
-      var missing = list.filter(function(x) { return isRoomUnassignedUI(x.phong); });
-      if (missing.length > 0) {
-        Swal.fire({
-          title: '⚠️ Còn ' + missing.length + ' buổi chưa xếp phòng!',
-          html: 'Trong tuần này đang có <b class="text-danger">' + missing.length + ' buổi học</b> chưa có phòng (đang hiện <b>P: Chưa xếp</b>).<br><br>Bạn muốn điền phòng trước hay vẫn tiếp tục mở cửa sổ Gửi Báo Giảng?',
-          icon: 'warning',
-          showCancelButton: true,
-          showDenyButton: true,
-          confirmButtonText: '<i class="fas fa-door-open me-1"></i> Điền phòng trước',
-          denyButtonText: 'Vẫn gửi Báo Giảng',
-          cancelButtonText: 'Đóng'
-        }).then(function(r) {
-          if (r.isConfirmed) openMissingRoomsModal('WEEK');
-          else if (r.isDenied) origOpenBaoGiang_();
-        });
-        return;
-      }
-      origOpenBaoGiang_();
-    };
-  }
-
-  var origToggleLock_ = window.toggleStudentViewLockStatus;
-  if (typeof origToggleLock_ === 'function') {
-    window.toggleStudentViewLockStatus = function() {
-      var list = Array.isArray(window.globalMatrixList) ? window.globalMatrixList : [];
-      var missing = list.filter(function(x) { return isRoomUnassignedUI(x.phong); });
-      if (window.currentWeekLockState === "LOCKED" && missing.length > 0) {
-        Swal.fire({
-          title: '⚠️ Tuần này còn ' + missing.length + ' buổi chưa có phòng!',
-          html: 'Nếu mở khóa lịch lúc này, Sinh viên và Giảng viên sẽ thấy <b class="text-danger">Phòng: Chưa xếp</b> ở ' + missing.length + ' buổi học.<br><br>Bạn có muốn xếp phòng trước khi công bố lịch không?',
-          icon: 'warning',
-          showCancelButton: true,
-          showDenyButton: true,
-          confirmButtonText: '<i class="fas fa-door-open me-1"></i> Xếp phòng ngay',
-          denyButtonText: 'Vẫn mở khóa lịch',
-          cancelButtonText: 'Hủy'
-        }).then(function(r) {
-          if (r.isConfirmed) openMissingRoomsModal('WEEK');
-          else if (r.isDenied) origToggleLock_();
-        });
-        return;
-      }
-      origToggleLock_();
-    };
-  }
-
-  // 10. Tự động theo dõi mọi thay đổi trên bảng #adminMatrixTableHtml và #gvMatrixTableHtml
-  function initMissingRoomObserver_() {
-    var adminTbl = document.getElementById('adminMatrixTableHtml');
-    if (adminTbl) {
-      var obs = new MutationObserver(function() {
-        scanAndRenderMissingRooms();
-      });
-      obs.observe(adminTbl, { childList: true, subtree: false });
-    }
-    var gvTbl = document.getElementById('gvMatrixTableHtml');
-    if (gvTbl) {
-      var obsGv = new MutationObserver(function() {
-        scanAndRenderMissingRooms();
-      });
-      obsGv.observe(gvTbl, { childList: true, subtree: false });
-    }
-    scanAndRenderMissingRooms();
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initMissingRoomObserver_);
-  } else {
-    initMissingRoomObserver_();
-  }
 })();
 </script>
 
-
-<!-- ==================================================================== -->
-<!-- TRUNG TÂM QUẢN LÝ DỮ LIỆU SINH VIÊN THÔNG MINH & LƯU VẾT LỊCH SỬ     -->
-<!-- (Tự động nâng cấp Kiểm tra trùng 4 cấp độ + Đồng bộ Nhóm + Undo)     -->
-<!-- ==================================================================== -->
-<style>
-  .sm-stat-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 5px 12px;
-    border-radius: 99px;
-    font-size: 0.78rem;
-    font-weight: 800;
-    border: 1px solid transparent;
-    cursor: pointer;
-    transition: all 0.15s ease;
-  }
-  .sm-stat-pill:hover { transform: translateY(-1px); }
-  .sm-stat-pill.st-new { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
-  .sm-stat-pill.st-upd { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
-  .sm-stat-pill.st-id  { background: #fffbeb; color: #b45309; border-color: #fde68a; }
-  .sm-stat-pill.st-unc { background: #f1f5f9; color: #475569; border-color: #cbd5e1; }
-  .sm-stat-pill.st-inv { background: #fef2f2; color: #b91c1c; border-color: #fecaca; }
-
-  .sm-diff-tag {
-    display: inline-block;
-    padding: 2px 8px;
-    border-radius: 6px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    background: #eff6ff;
-    color: #1e40af;
-    border: 1px dashed #93c5fd;
-  }
-  .sm-diff-tag.warn {
-    background: #fffbeb;
-    color: #92400e;
-    border-color: #fcd34d;
-  }
-</style>
-
-<!-- Modal Trung Tâm Quản Lý & Cập Nhật Danh Sách Sinh Viên Thông Minh -->
-<div class="modal fade" id="modalSmartStudentManager" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-xl">
-    <div class="modal-content shadow-lg" style="border-top: 5px solid #2563eb; border-radius: 16px;">
-      <div class="modal-header bg-light py-3">
-        <div>
-          <h5 class="modal-title fw-bold text-primary m-0">
-            <i class="fas fa-user-shield me-2"></i>TRUNG TÂM QUẢN LÝ & CẬP NHẬT DỮ LIỆU SINH VIÊN THÔNG MINH
-          </h5>
-          <small class="text-muted">Tự động phát hiện trùng lặp 4 cấp độ · Điền/Đổi nhóm thông minh · Bảo toàn học phí cũ & Lưu vết khôi phục 1 chạm</small>
-        </div>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+<div class="modal fade" id="subjectManagerModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+      <div class="modal-header bg-primary text-white" style="border-radius: 16px 16px 0 0;">
+        <h5 class="modal-title fw-bold"><i class="fas fa-book me-2"></i>Quản lý Danh mục Môn học</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
       </div>
-
-      <div class="modal-body p-0">
-        <ul class="nav nav-tabs px-3 pt-2 bg-light">
-          <li class="nav-item">
-            <a class="nav-link active fw-bold" href="javascript:void(0)" id="smTabBtnImport" onclick="switchSmartStudentTab('IMPORT')">
-              <i class="fas fa-file-import text-primary me-1"></i> 1. Dán & Cập nhật Thông tin / Chia lại Nhóm
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link fw-bold text-muted" href="javascript:void(0)" id="smTabBtnReplace" onclick="switchSmartStudentTab('REPLACE')">
-              <i class="fas fa-sync-alt text-danger me-1"></i> 2. Xóa trắng / Thay mới Sheet SINH_VIEN An toàn
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link fw-bold text-muted" href="javascript:void(0)" id="smTabBtnHistory" onclick="switchSmartStudentTab('HISTORY')">
-              <i class="fas fa-history text-success me-1"></i> 3. Lịch sử thay đổi & Hoàn tác (Undo)
-            </a>
-          </li>
+      <div class="modal-body p-3">
+        <div class="input-group mb-3">
+          <input type="text" id="subjMgrNewName" class="form-control" placeholder="Nhập tên môn học mới cần thêm...">
+          <button type="button" class="btn btn-success fw-bold" onclick="addSubjectNameWeb()"><i class="fas fa-plus me-1"></i>Thêm môn</button>
+        </div>
+        <input type="text" id="subjMgrSearch" class="form-control form-control-sm mb-2" placeholder="🔍 Lọc nhanh môn học..." oninput="renderSubjectManagerList()">
+        <div id="subjMgrList" class="border rounded" style="max-height: 360px; overflow-y: auto;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal fade" id="smartStudentHubModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+      <div class="modal-header text-white" style="background: linear-gradient(135deg, #0f766e, #0d9488); border-radius: 16px 16px 0 0;">
+        <div>
+          <h5 class="modal-title fw-bold mb-0"><i class="fas fa-user-shield me-2"></i>Cập nhật SV Thông minh / Điền Nhóm &amp; Kỳ mới</h5>
+          <small class="opacity-75">Phân tích trùng 4 cấp độ, điền nhóm đồng bộ môn đang mở, cập nhật danh sách kỳ mới &amp; khôi phục</small>
+        </div>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
+      </div>
+      <div class="modal-body p-3">
+        <ul class="nav nav-tabs mb-3" role="tablist">
+          <li class="nav-item"><button class="nav-link active fw-bold" data-bs-toggle="tab" data-bs-target="#tabSmartMerge" type="button"><i class="fas fa-brain me-1"></i>Phân tích &amp; Điền Nhóm (4 cấp độ)</button></li>
+          <li class="nav-item"><button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#tabNewSemester" type="button"><i class="fas fa-calendar-plus me-1"></i>Cập nhật DS Kỳ mới</button></li>
+          <li class="nav-item"><button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#tabSvHistory" type="button" onclick="loadStudentChangeHistoryWeb()"><i class="fas fa-history me-1"></i>Lịch sử &amp; Khôi phục DS SV</button></li>
         </ul>
 
-        <div class="p-3">
-          <!-- TAB 1: DÁN EXCEL & CẬP NHẬT THÔNG MINH -->
-          <div id="smAreaImport">
-            <div class="alert alert-primary py-2 mb-2 small">
-              <div class="fw-bold mb-1"><i class="fas fa-magic me-1"></i> Hỗ trợ dán thông minh từ Excel (Copy & Paste):</div>
-              <div>• Thứ tự cột chuẩn: <code class="fw-bold text-danger">MSSV | Họ lót | Tên | Ngày sinh | Lớp gốc | Nhóm (Nếu có)</code> (Hệ thống tự động nhận diện kể cả khi bạn copy dư cột STT ở đầu).</div>
-              <div>• <b>Nếu SV đã có tên:</b> Hệ thống chỉ cập nhật những thông tin mới (như điền thêm <b>Nhóm</b>, sửa <b>Lớp/Ngày sinh</b>), <b>giữ nguyên 100% Học phí 8 kỳ & Ghi chú cũ</b>.</div>
+        <div class="tab-content">
+          <!-- TAB 1: PHÂN TÍCH 4 CẤP ĐỘ & ĐIỀN NHÓM -->
+          <div class="tab-pane fade show active" id="tabSmartMerge">
+            <div class="alert alert-info small py-2 mb-2">
+              Dán từ Excel theo 6 cột (cách nhau bằng Tab): <code>MSSV | Họ lót | Tên | Ngày sinh | Lớp | Nhóm (nếu có)</code>
             </div>
-
-            <textarea id="smPasteInput" class="form-control mb-2" rows="4" placeholder="Dán (Ctrl+V) danh sách sinh viên từ Excel vào đây (có thể dán lẫn lộn cả SV cũ cần sửa Nhóm và SV mới)..."></textarea>
-
-            <div class="row g-2 align-items-center mb-3">
-              <div class="col-12 col-md-5">
-                <label class="form-label small fw-bold text-dark mb-1"><i class="fas fa-layer-group text-primary me-1"></i>Chế độ đồng bộ khi thay đổi Nhóm / Lớp:</label>
-                <select id="smSyncGroupMode" class="form-select form-select-sm border-primary fw-bold">
-                  <option value="SYNC_OPEN_SUBJECTS" selected>🔄 Đồng bộ Nhóm mới vào cả các môn ĐANG HỌC (DS_MON)</option>
-                  <option value="ONLY_FUTURE_SUBJECTS">🔒 Giữ nguyên nhóm cũ ở các môn đã mở, chỉ áp dụng cho môn phân công mới</option>
-                </select>
-              </div>
-              <div class="col-12 col-md-4">
-                <div class="form-check mt-3 pt-1">
-                  <input class="form-check-input" type="checkbox" id="smCheck30Late">
-                  <label class="form-check-label small fw-bold text-secondary" for="smCheck30Late">
-                    Áp dụng xét luật 30% (Dành cho SV đóng phí trễ)
-                  </label>
+            <textarea id="smartHubPaste" class="form-control mb-2" rows="4" placeholder="Dán danh sách sinh viên từ Excel vào đây..."></textarea>
+            <div class="d-flex flex-wrap gap-3 align-items-center justify-content-between mb-3">
+              <div class="d-flex flex-wrap gap-3">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="hubRule30" checked>
+                  <label class="form-check-label small fw-semibold" for="hubRule30">Xét điều kiện &ge; 30% buổi học (SV trễ)</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="hubSyncOpen" checked>
+                  <label class="form-check-label small fw-semibold" for="hubSyncOpen">Đồng bộ nhóm sang các môn đang mở</label>
                 </div>
               </div>
-              <div class="col-12 col-md-3 text-end">
-                <button type="button" class="btn btn-primary w-100 fw-bold" onclick="runSmartStudentPreview()">
-                  <i class="fas fa-search me-1"></i> Phân Tích & Kiểm Tra Trùng
-                </button>
-              </div>
+              <button type="button" class="btn btn-primary fw-bold" onclick="runSmartPreviewHub()"><i class="fas fa-search me-1"></i>Phân tích thông minh (4 cấp độ)</button>
             </div>
-
-            <div id="smPreviewContainer" style="display:none;">
-              <div class="d-flex flex-wrap gap-2 align-items-center justify-content-between mb-2 pb-2 border-bottom" id="smSummaryPills"></div>
-              <div class="table-responsive border rounded" style="max-height: 330px;">
-                <table class="table table-sm table-hover align-middle mb-0" style="font-size: 0.84rem;">
-                  <thead class="table-light sticky-top">
-                    <tr>
-                      <th style="width: 42px;">#</th>
-                      <th style="width: 115px;">MSSV</th>
-                      <th style="width: 185px;">Họ và Tên</th>
-                      <th style="width: 95px;">Ngày sinh</th>
-                      <th style="width: 140px;">Lớp · Nhóm</th>
-                      <th>Phát hiện thay đổi / Trùng lặp</th>
-                      <th style="width: 185px;">Xử lý thông minh</th>
-                    </tr>
+            <div id="smartHubSummary" class="mb-2"></div>
+            <div id="smartHubPreviewWrap" style="display:none;">
+              <div class="table-responsive border rounded" style="max-height: 300px;">
+                <table class="table table-sm table-bordered align-middle mb-0" style="font-size:0.84rem;">
+                  <thead class="table-light" style="position:sticky;top:0;">
+                    <tr><th>MSSV</th><th>Họ Tên</th><th>Lớp / Nhóm</th><th>Phân tích hệ thống</th><th>Hành động</th></tr>
                   </thead>
-                  <tbody id="smPreviewTableBody"></tbody>
+                  <tbody id="smartHubPreviewBody"></tbody>
                 </table>
               </div>
-              <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top">
-                <span class="small text-muted"><i class="fas fa-history text-success me-1"></i>Mọi dữ liệu cũ trước khi cập nhật đều được tự động lưu vào <code>LICH_SU_SINH_VIEN</code></span>
-                <button type="button" class="btn btn-success fw-bold px-4" id="btnSmExecuteImport" onclick="confirmExecuteSmartStudentImport()">
-                  <i class="fas fa-check-double me-1"></i> Xác Nhận Lưu & Cập Nhật Thông Minh
-                </button>
+              <div class="text-end mt-3">
+                <button type="button" class="btn btn-success fw-bold" onclick="executeSmartImportHub()"><i class="fas fa-check-circle me-1"></i>Xác nhận Lưu Thông minh</button>
               </div>
             </div>
           </div>
 
-          <!-- TAB 2: XÓA TRẮNG / THAY MỚI TOÀN BỘ SHEET SINH_VIEN AN TOÀN -->
-          <div id="smAreaReplace" style="display:none;">
-            <div class="card border-danger mb-3" style="background: #fffdf5;">
-              <div class="card-body p-3">
-                <h6 class="fw-bold text-danger mb-2"><i class="fas fa-shield-alt me-1"></i> Cơ chế Bảo Vệ 3 Tầng khi bạn muốn xóa trắng sheet SINH_VIEN để thay danh sách mới:</h6>
-                <ol class="small mb-0 text-dark" style="line-height: 1.6;">
-                  <li><b>Tầng 1 (Đóng băng môn đang học):</b> Hệ thống tự động chụp toàn bộ danh sách sinh viên + trạng thái nợ học phí Kỳ 1..8 + ghi chú cấm thi của tất cả các môn đang mở vào <code>DS_MON</code>. Giảng viên vẫn điểm danh, nhập điểm và xếp lịch bình thường.</li>
-                  <li><b>Tầng 2 (Lưu kho lịch sử):</b> Toàn bộ sinh viên hiện có trong <code>SINH_VIEN</code> được cất nguyên vẹn vào <code>LICH_SU_SINH_VIEN</code>. Cần lấy lại chỉ mất 1 cú nhấp chuột ở Tab 3.</li>
-                  <li><b>Tầng 3 (Thay danh sách mới sạch sẽ):</b> Làm sạch <code>SINH_VIEN</code> hoặc nạp ngay danh sách khóa mới vào mà không lo rớt dữ liệu cũ.</li>
-                </ol>
-              </div>
+          <!-- TAB 2: CẬP NHẬT DS KỲ MỚI -->
+          <div class="tab-pane fade" id="tabNewSemester">
+            <div class="alert alert-warning small py-2 mb-2">
+              <b>An toàn tuyệt đối:</b> Hệ thống sẽ tự động chốt toàn bộ bảng điểm các môn hiện có vào <code>DS_MON</code> và sao lưu toàn bộ <code>SINH_VIEN</code> cũ vào <code>LICH_SU_SINH_VIEN</code> trước khi nạp danh sách kỳ mới.
             </div>
-
-            <label class="form-label fw-bold text-dark small">Tùy chọn: Dán danh sách sinh viên mới vào đây (Hoặc để trống nếu chỉ muốn xóa trắng an toàn sheet SINH_VIEN):</label>
-            <textarea id="smReplacePasteInput" class="form-control mb-3" rows="4" placeholder="Có thể để trống nếu chỉ muốn làm sạch sheet SINH_VIEN, hoặc dán danh sách mới (MSSV | Họ lót | Tên | Ngày sinh | Lớp | Nhóm)..."></textarea>
-
-            <div class="d-flex justify-content-end gap-2">
-              <button type="button" class="btn btn-danger fw-bold px-4" onclick="confirmArchiveAndReplaceSheet()">
-                <i class="fas fa-shield-virus me-1"></i> Sao Lưu Toàn Bộ Dữ Liệu Cũ & Làm Mới Sheet SINH_VIEN
-              </button>
+            <textarea id="newSemPaste" class="form-control mb-2" rows="5" placeholder="Dán danh sách sinh viên KỲ MỚI từ Excel (MSSV | Họ lót | Tên | Ngày sinh | Lớp | Nhóm)... Để trống nếu chỉ muốn lưu trữ & dọn sheet cũ."></textarea>
+            <div class="form-check mb-3">
+              <input class="form-check-input" type="checkbox" id="chkPreserveTuition" checked>
+              <label class="form-check-label fw-semibold small" for="chkPreserveTuition">Giữ lại trạng thái Học phí &amp; Ghi chú cũ nếu trùng MSSV</label>
+            </div>
+            <div class="text-end">
+              <button type="button" class="btn btn-danger fw-bold" onclick="executeArchiveAndNewSemester()"><i class="fas fa-shield-alt me-1"></i>Chốt DS cũ &amp; Cập nhật Kỳ mới</button>
             </div>
           </div>
 
-          <!-- TAB 3: LỊCH SỬ THAY ĐỔI & HOÀN TÁC (UNDO) -->
-          <div id="smAreaHistory" style="display:none;">
+          <!-- TAB 3: LỊCH SỬ & KHÔI PHỤC DS SINH VIÊN -->
+          <div class="tab-pane fade" id="tabSvHistory">
             <div class="d-flex justify-content-between align-items-center mb-2">
-              <span class="fw-bold text-dark"><i class="fas fa-clock-rotate-left text-success me-1"></i> Các đợt cập nhật / sửa đổi gần nhất (Bao gồm cả sửa trực tiếp trên Google Sheets):</span>
-              <button type="button" class="btn btn-sm btn-outline-primary fw-bold" onclick="loadSmartStudentHistory()">
-                <i class="fas fa-sync-alt me-1"></i> Tải lại lịch sử
-              </button>
+              <span class="small text-muted">Các đợt cập nhật / lưu trữ danh sách sinh viên gần đây</span>
+              <button type="button" class="btn btn-sm btn-outline-primary" onclick="loadStudentChangeHistoryWeb()"><i class="fas fa-sync-alt me-1"></i>Tải lại</button>
             </div>
-            <div class="table-responsive border rounded" style="max-height: 400px;">
-              <table class="table table-sm table-hover align-middle mb-0" style="font-size: 0.84rem;">
-                <thead class="table-light sticky-top">
-                  <tr>
-                    <th style="width: 155px;">Thời gian / Mã đợt</th>
-                    <th style="width: 170px;">Loại thao tác</th>
-                    <th style="width: 90px;" class="text-center">Số lượng</th>
-                    <th>Chi tiết các sinh viên thay đổi (Trước ➔ Sau)</th>
-                    <th style="width: 135px;" class="text-center">Khôi phục</th>
-                  </tr>
-                </thead>
-                <tbody id="smHistoryTableBody">
-                  <tr><td colspan="5" class="text-center py-4 text-muted">Đang tải lịch sử...</td></tr>
-                </tbody>
-              </table>
-            </div>
+            <div id="svHistoryBox" class="border rounded p-2" style="max-height:340px;overflow-y:auto;"></div>
           </div>
         </div>
       </div>
@@ -11748,392 +10781,589 @@ var wb = XLSX.utils.book_new();
 </div>
 
 <script>
-(function() {
-  if (window.__LMS_SMART_STUDENT_LOADED__) return;
-  window.__LMS_SMART_STUDENT_LOADED__ = true;
+(function(){
+  var smartItemsCache = [];
+  function escS(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
 
-  var currentSmartPreviewItems_ = [];
-
-  // 1. Tự động gắn nút mở "Quản lý & Cập nhật DS Sinh viên Thông minh" vào Menu Thao tác Quản lý của Admin
-  function injectSmartStudentMenuButton_() {
-    var menu = document.querySelector('#adminSubTab2Actions .dropdown-menu');
-    if (menu && !document.getElementById('menuItemSmartStudentMgr')) {
-      var li = document.createElement('li');
-      li.id = 'menuItemSmartStudentMgr';
-      li.innerHTML = '<a class="dropdown-item py-2 fw-bold" style="color:#0f766e;background:#f0fdfa;" href="javascript:void(0)" onclick="openSmartStudentManagerModal(\'IMPORT\')">' +
-        '<i class="fas fa-user-shield me-2"></i> 🛡️ Cập nhật SV Thông minh / Điền Nhóm / Hoàn tác</a><li><hr class="dropdown-divider"></li>';
-      menu.insertBefore(li, menu.firstChild);
-    }
-
-    // Thêm nút cạnh nút Bổ sung SV trễ hoặc trong modalBoSung để tiện bấm
-    var bulkArea = document.getElementById('boSungBulkArea');
-    if (bulkArea && !document.getElementById('btnOpenFullSmartMgrFromBoSung')) {
-      var banner = document.createElement('div');
-      banner.id = 'btnOpenFullSmartMgrFromBoSung';
-      banner.className = 'mb-2';
-      banner.innerHTML = '<button type="button" class="btn btn-sm btn-outline-primary w-100 fw-bold" onclick="bootstrap.Modal.getInstance(document.getElementById(\'modalBoSung\')).hide(); openSmartStudentManagerModal(\'IMPORT\');">' +
-        '<i class="fas fa-expand-arrows-alt me-1"></i> Mở Trình Quản Lý Sinh Viên Toàn Màn Hình (Có Lịch sử & Hoàn tác 1 chạm)' +
-      '</button>';
-      bulkArea.insertBefore(banner, bulkArea.firstChild);
-    }
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', injectSmartStudentMenuButton_);
-  } else {
-    injectSmartStudentMenuButton_();
-  }
-
-  // 2. Bộ đọc dòng粘贴 Excel thông minh (Tự động nhận diện cả khi có cột STT ở đầu hoặc gộp Họ Tên)
-  window.parseRawExcelStudentLines = function(rawText) {
-    var rows = String(rawText || '').split(/\r?\n/);
+  function parseExcelRows(rawText){
+    var lines = String(rawText || '').split(/\r?\n/).map(function(l){ return l.trim(); }).filter(Boolean);
     var out = [];
-    rows.forEach(function(line) {
-      if (!line || !line.trim()) return;
-      var cols = line.split('\t').map(function(c) { return c.trim(); });
-      if (cols.length < 2) return;
-
-      // Bỏ qua dòng tiêu đề nếu người dùng copy cả dòng Header từ Excel
-      var c0Upper = cols[0].toUpperCase();
-      var c1Upper = (cols[1] || '').toUpperCase();
-      if (c0Upper === 'STT' || c0Upper === 'MSSV' || c1Upper === 'MSSV' || c0Upper === 'MÃ SV') return;
-
-      var offset = 0;
-      // Nếu cột 0 là số thứ tự nhỏ (1..999) và cột 1 là mã sinh viên (>= 5 ký tự)
-      if (/^\d{1,3}$/.test(cols[0]) && cols.length >= 6 && cols[1].length >= 5) {
-        offset = 1;
-      }
-
-      var mssv = cols[offset] || '';
-      var ho = cols[offset + 1] || '';
-      var ten = cols[offset + 2] || '';
-      var ns = cols[offset + 3] || '';
-      var lop = cols[offset + 4] || '';
-      var nhom = cols[offset + 5] || '';
-
-      out.push({ mssv: mssv, ho: ho, ten: ten, ns: ns, lop: lop, nhom: nhom });
+    lines.forEach(function(line){
+      var cols = line.split('\t');
+      if (cols.length < 2) cols = line.split(',');
+      var mssv = (cols[0] || '').trim();
+      if (!mssv || mssv.toLowerCase() === 'mssv') return;
+      out.push({
+        mssv: mssv,
+        ho: (cols[1] || '').trim(),
+        ten: (cols[2] || '').trim(),
+        ns: (cols[3] || '').trim(),
+        lop: (cols[4] || '').trim(),
+        nhom: (cols[5] || '').trim()
+      });
     });
     return out;
-  };
-
-  // 3. Mở Modal Trung tâm Quản lý Sinh viên Thông minh
-  window.openSmartStudentManagerModal = function(defaultTab) {
-    var modalEl = document.getElementById('modalSmartStudentManager');
-    var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-    modal.show();
-    switchSmartStudentTab(defaultTab || 'IMPORT');
-  };
-
-  window.switchSmartStudentTab = function(tab) {
-    document.getElementById('smTabBtnImport').className = tab === 'IMPORT' ? 'nav-link active fw-bold' : 'nav-link fw-bold text-muted';
-    document.getElementById('smTabBtnReplace').className = tab === 'REPLACE' ? 'nav-link active fw-bold' : 'nav-link fw-bold text-muted';
-    document.getElementById('smTabBtnHistory').className = tab === 'HISTORY' ? 'nav-link active fw-bold' : 'nav-link fw-bold text-muted';
-
-    document.getElementById('smAreaImport').style.display = tab === 'IMPORT' ? 'block' : 'none';
-    document.getElementById('smAreaReplace').style.display = tab === 'REPLACE' ? 'block' : 'none';
-    document.getElementById('smAreaHistory').style.display = tab === 'HISTORY' ? 'block' : 'none';
-
-    if (tab === 'HISTORY') {
-      loadSmartStudentHistory();
-    }
-  };
-
-  // 4. Chạy Phân tích & Kiểm tra trùng 4 cấp độ
-  window.runSmartStudentPreview = function() {
-    var rawText = document.getElementById('smPasteInput').value.trim();
-    if (!rawText) return Swal.fire('Lưu ý', 'Vui lòng dán dữ liệu sinh viên từ Excel vào ô trống!', 'warning');
-
-    var parsed = parseRawExcelStudentLines(rawText);
-    if (parsed.length === 0) return Swal.fire('Lưu ý', 'Không đọc được dòng dữ liệu hợp lệ nào. Hãy kiểm tra lại định dạng cột!', 'warning');
-
-    showLoading('Đang đối chiếu trùng lặp 4 cấp độ với CSDL...');
-    google.script.run.withSuccessHandler(function(res) {
-      Swal.close();
-      if (!res || !res.success) {
-        return Swal.fire('Lỗi', res ? res.message : 'Không thể phân tích dữ liệu', 'error');
-      }
-      currentSmartPreviewItems_ = res.items || [];
-      renderSmartStudentPreviewTable_(res.counts, currentSmartPreviewItems_);
-    }).withFailureHandler(showError).previewSmartStudentImport(parsed);
-  };
-
-  function renderSmartStudentPreviewTable_(counts, items) {
-    var container = document.getElementById('smPreviewContainer');
-    var pillsBox = document.getElementById('smSummaryPills');
-    var tbody = document.getElementById('smPreviewTableBody');
-    container.style.display = 'block';
-
-    pillsBox.innerHTML =
-      '<div class="d-flex flex-wrap gap-2">' +
-        '<span class="sm-stat-pill st-new"><i class="fas fa-plus-circle"></i> Mới hoàn toàn: ' + (counts.NEW || 0) + '</span>' +
-        '<span class="sm-stat-pill st-upd"><i class="fas fa-pen"></i> Có bổ sung / Đổi nhóm: ' + (counts.UPDATE || 0) + '</span>' +
-        '<span class="sm-stat-pill st-id"><i class="fas fa-exclamation-triangle"></i> Nghi trùng người / Đổi MSSV: ' + (counts.IDENTITY_MATCH || 0) + '</span>' +
-        '<span class="sm-stat-pill st-unc"><i class="fas fa-check"></i> Giống hệt 100%: ' + (counts.UNCHANGED || 0) + '</span>' +
-        (counts.DUP_IN_PASTE > 0 ? ('<span class="sm-stat-pill st-id"><i class="fas fa-compress-arrows-alt"></i> Đã tự gộp trùng trong bảng dán: ' + counts.DUP_IN_PASTE + '</span>') : '') +
-        (counts.INVALID > 0 ? ('<span class="sm-stat-pill st-inv"><i class="fas fa-times-circle"></i> Lỗi thiếu cột: ' + counts.INVALID + '</span>') : '') +
-      '</div>';
-
-    var html = '';
-    items.forEach(function(it, idx) {
-      var badgeHtml = '';
-      var actionSelectHtml = '';
-
-      if (it.category === 'NEW') {
-        badgeHtml = '<span class="badge bg-success-soft text-success">🟢 MỚI HOÀN TOÀN</span>';
-        actionSelectHtml =
-          '<select class="form-select form-select-sm fw-bold text-success border-success sm-row-action" data-idx="' + idx + '">' +
-            '<option value="INSERT" selected>➕ Thêm mới SV</option>' +
-            '<option value="SKIP">⏭️ Bỏ qua</option>' +
-          '</select>';
-      } else if (it.category === 'UPDATE') {
-        badgeHtml = '<span class="badge bg-primary-soft text-primary">🔵 CẬP NHẬT / BỔ SUNG</span> ' +
-          '<div class="sm-diff-tag mt-1">' + escapeHtml(it.diffText) + '</div>';
-        actionSelectHtml =
-          '<select class="form-select form-select-sm fw-bold text-primary border-primary sm-row-action" data-idx="' + idx + '">' +
-            '<option value="UPDATE" selected>🔄 Cập nhật & Giữ học phí cũ</option>' +
-            '<option value="SKIP">⏭️ Giữ nguyên như cũ (Bỏ qua)</option>' +
-          '</select>';
-      } else if (it.category === 'IDENTITY_MATCH') {
-        badgeHtml = '<span class="badge bg-warning text-dark">🟡 NGHI TRÙNG NGƯỜI (KHÁC MSSV)</span> ' +
-          '<div class="sm-diff-tag warn mt-1">' + escapeHtml(it.diffText) + '</div>';
-        actionSelectHtml =
-          '<select class="form-select form-select-sm fw-bold text-warning-emphasis border-warning sm-row-action" data-idx="' + idx + '">' +
-            '<option value="MIGRATE_MSSV" selected>🔗 Đổi sang MSSV mới & Chuyển Điểm</option>' +
-            '<option value="INSERT">➕ Tạo thành SV mới riêng biệt</option>' +
-            '<option value="SKIP">⏭️ Bỏ qua dòng này</option>' +
-          '</select>';
-      } else if (it.category === 'UNCHANGED') {
-        badgeHtml = '<span class="badge bg-secondary-soft">⚪ GIỐNG HỆT 100%</span>';
-        actionSelectHtml =
-          '<select class="form-select form-select-sm text-muted sm-row-action" data-idx="' + idx + '">' +
-            '<option value="SKIP" selected>⏭️ Bỏ qua (Không cần ghi đè)</option>' +
-            '<option value="UPDATE">🔄 Vẫn ghi đè lại</option>' +
-          '</select>';
-      } else {
-        badgeHtml = '<span class="badge bg-danger">🔴 THIẾU THÔNG TIN</span> <small class="text-danger">' + escapeHtml(it.diffText) + '</small>';
-        actionSelectHtml = '<span class="text-muted small">Không hợp lệ</span>';
-      }
-
-      html += '<tr>' +
-        '<td class="text-muted">' + (idx + 1) + '</td>' +
-        '<td class="fw-bold text-dark">' + escapeHtml(it.mssv) + (it.oldMssv && it.oldMssv !== it.mssv ? ('<br><small class="text-danger">Cũ: ' + escapeHtml(it.oldMssv) + '</small>') : '') + '</td>' +
-        '<td class="fw-bold">' + escapeHtml(it.ho + ' ' + it.ten) + '</td>' +
-        '<td>' + escapeHtml(it.ns || '') + '</td>' +
-        '<td><span class="fw-bold text-primary">' + escapeHtml(it.lop) + '</span>' + (it.nhom ? ('<br><span class="badge bg-primary-soft">' + escapeHtml(it.nhom) + '</span>') : '') + '</td>' +
-        '<td>' + badgeHtml + '</td>' +
-        '<td>' + actionSelectHtml + '</td>' +
-      '</tr>';
-    });
-
-    tbody.innerHTML = html;
   }
 
-  // 5. Thực thi Lưu & Cập nhật Sinh viên Thông minh
-  window.confirmExecuteSmartStudentImport = function() {
-    if (!currentSmartPreviewItems_.length) return;
+  window.openSmartStudentHubModal = function(){
+    var el = document.getElementById('smartStudentHubModal');
+    if (window.bootstrap && bootstrap.Modal) bootstrap.Modal.getOrCreateInstance(el).show();
+  };
 
-    document.querySelectorAll('#smPreviewTableBody .sm-row-action').forEach(function(sel) {
-      var idx = parseInt(sel.getAttribute('data-idx'), 10);
-      if (currentSmartPreviewItems_[idx]) {
-        currentSmartPreviewItems_[idx].action = sel.value;
-      }
-    });
-
-    var activeItems = currentSmartPreviewItems_.filter(function(x) { return x.action && x.action !== 'SKIP'; });
-    if (activeItems.length === 0) {
-      return Swal.fire('Thông báo', 'Tất cả các dòng đều đang ở trạng thái Bỏ qua (không có thay đổi nào cần lưu)!', 'info');
+  function renderSmartPreview(res, summaryId, wrapId, bodyId){
+    smartItemsCache = res.items || [];
+    var c = res.counts || {};
+    var sumEl = document.getElementById(summaryId);
+    if (sumEl) {
+      sumEl.innerHTML = '<div class="d-flex flex-wrap gap-2 small">' +
+        '<span class="badge bg-success">Mới: ' + (c.NEW || 0) + '</span>' +
+        '<span class="badge bg-warning text-dark">Khác thông tin: ' + (c.INFO_DIFF || 0) + '</span>' +
+        '<span class="badge bg-info text-dark">Đổi MSSV (trùng người): ' + (c.IDENTITY_MATCH || 0) + '</span>' +
+        '<span class="badge bg-secondary">Trùng hoàn toàn: ' + (c.EXACT_DUP || 0) + '</span>' +
+      '</div>';
     }
-
-    var syncMode = document.getElementById('smSyncGroupMode').value;
-    var check30 = document.getElementById('smCheck30Late').checked;
-
-    showLoading('Đang lưu vết lịch sử & cập nhật ' + activeItems.length + ' sinh viên...');
-    google.script.run.withSuccessHandler(function(res) {
-      if (res && res.success) {
-        Swal.fire({ title: 'Thành công!', html: res.message, icon: 'success' });
-        document.getElementById('smPasteInput').value = '';
-        document.getElementById('smPreviewContainer').style.display = 'none';
-        if (typeof loadAdminDashboard === 'function') loadAdminDashboard(true);
-      } else {
-        Swal.fire('Lỗi', res ? res.message : 'Lỗi không xác định', 'error');
-      }
-    }).withFailureHandler(showError).executeSmartStudentImport({
-      items: currentSmartPreviewItems_,
-      syncGroupMode: syncMode,
-      check30RuleForLate: check30,
-      unbanLateTuition: check30
-    });
-  };
-
-  // 6. Nâng cấp trực tiếp luôn nút "Kiểm tra dữ liệu" & "Xác nhận Bổ sung Hàng loạt" trong modalBoSung cũ
-  window.previewBulkStudents = function() {
-    var rawData = document.getElementById('bulkPasteArea').value.trim();
-    if (!rawData) return Swal.fire('Lưu ý', 'Vui lòng dán dữ liệu từ Excel vào ô trống!', 'warning');
-
-    var parsed = parseRawExcelStudentLines(rawData);
-    if (parsed.length === 0) return Swal.fire('Lưu ý', 'Không tìm thấy dòng dữ liệu hợp lệ!', 'warning');
-
-    showLoading('Đang kiểm tra trùng lặp & phân tích dữ liệu...');
-    google.script.run.withSuccessHandler(function(res) {
-      Swal.close();
-      if (!res || !res.success) return Swal.fire('Lỗi', res ? res.message : 'Lỗi kiểm tra', 'error');
-
-      window.validBulkStudents = res.items || [];
-      var tbody = document.getElementById('bulkPreviewTable');
-      var html = '';
-      var actionableCount = 0;
-
-      window.validBulkStudents.forEach(function(it) {
-        if (it.category === 'UNCHANGED') it.action = 'UPDATE'; // Trong modal Bổ sung SV đóng trễ, cho phép mở khóa học phí cho SV đã có tên
-        else it.action = it.defaultAction;
-
-        if (it.action !== 'SKIP') actionableCount++;
-
-        var stBadge = '';
-        if (it.category === 'NEW') stBadge = '<span class="badge bg-success">🟢 Mới hoàn toàn</span>';
-        else if (it.category === 'UPDATE') stBadge = '<span class="badge bg-primary">🔵 Cập nhật: ' + escapeHtml(it.diffText) + '</span>';
-        else if (it.category === 'IDENTITY_MATCH') stBadge = '<span class="badge bg-warning text-dark">🟡 Đổi MSSV (' + escapeHtml(it.oldMssv) + ' ➔ ' + escapeHtml(it.mssv) + ')</span>';
-        else if (it.category === 'UNCHANGED') stBadge = '<span class="badge bg-info text-dark">⚪ Đã có trong lớp (Khôi phục phí)</span>';
-        else stBadge = '<span class="badge bg-danger">🔴 Thiếu thông tin</span>';
-
-        html += '<tr>' +
-          '<td class="fw-bold">' + escapeHtml(it.mssv) + '</td>' +
-          '<td>' + escapeHtml(it.ho + ' ' + it.ten) + '</td>' +
-          '<td>' + escapeHtml(it.lop) + (it.nhom ? (' (' + escapeHtml(it.nhom) + ')') : '') + '</td>' +
-          '<td>' + stBadge + '</td>' +
+    var tbody = document.getElementById(bodyId);
+    if (tbody) {
+      tbody.innerHTML = smartItemsCache.map(function(it, i){
+        var act = it.defaultAction || 'SKIP';
+        return '<tr>' +
+          '<td><b>' + escS(it.mssv) + '</b>' + (it.oldMssv ? '<br><small class="text-muted">Cũ: ' + escS(it.oldMssv) + '</small>' : '') + '</td>' +
+          '<td>' + escS((it.ho || '') + ' ' + (it.ten || '')) + '</td>' +
+          '<td>' + escS(it.lop) + (it.nhom ? ' <span class="badge bg-light text-dark border">' + escS(it.nhom) + '</span>' : '') + '</td>' +
+          '<td><small>' + escS(it.diffText || it.category) + '</small></td>' +
+          '<td><select class="form-select form-select-sm smart-act-sel" data-idx="' + i + '">' +
+            '<option value="INSERT"' + (act === 'INSERT' ? ' selected' : '') + '>Thêm mới</option>' +
+            '<option value="UPDATE"' + (act === 'UPDATE' ? ' selected' : '') + '>Cập nhật / Điền nhóm</option>' +
+            '<option value="MIGRATE_MSSV"' + (act === 'MIGRATE_MSSV' ? ' selected' : '') + '>Đổi sang MSSV mới</option>' +
+            '<option value="SKIP"' + (act === 'SKIP' ? ' selected' : '') + '>Bỏ qua</option>' +
+          '</select></td>' +
         '</tr>';
-      });
+      }).join('');
+    }
+    var wrap = document.getElementById(wrapId);
+    if (wrap) wrap.style.display = 'block';
+  }
 
-      tbody.innerHTML = html;
-      document.getElementById('bulkPreviewArea').style.display = 'block';
-      document.getElementById('btnSubmitBulk').disabled = (actionableCount === 0);
-    }).withFailureHandler(showError).previewSmartStudentImport(parsed);
+  window.runSmartPreviewHub = function(){
+    var rows = parseExcelRows((document.getElementById('smartHubPaste') || {}).value);
+    if (!rows.length) return Swal.fire('Lưu ý', 'Vui lòng dán ít nhất 1 dòng sinh viên hợp lệ từ Excel!', 'warning');
+    if (typeof showLoading === 'function') showLoading('Đang phân tích 4 cấp độ...');
+    google.script.run
+      .withSuccessHandler(function(res){
+        if (typeof hideLoadingScreen === 'function') hideLoadingScreen();
+        if (!res || !res.success) return Swal.fire('Lỗi', (res && res.message) || 'Không phân tích được', 'error');
+        renderSmartPreview(res, 'smartHubSummary', 'smartHubPreviewWrap', 'smartHubPreviewBody');
+      })
+      .withFailureHandler(function(err){
+        if (typeof hideLoadingScreen === 'function') hideLoadingScreen();
+        Swal.fire('Lỗi', (err && err.message) || 'Lỗi kết nối', 'error');
+      })
+      .previewSmartStudentImport(rows);
   };
 
-  window.submitBulkStudents = function() {
-    if (!window.validBulkStudents || window.validBulkStudents.length === 0) return;
-    showLoading('Đang lưu vết lịch sử & xử lý hàng loạt...');
-    google.script.run.withSuccessHandler(function(res) {
-      if (res && res.success) {
-        Swal.fire({ title: 'Hoàn tất!', html: res.message, icon: 'success' });
-        bootstrap.Modal.getInstance(document.getElementById('modalBoSung')).hide();
-        document.getElementById('bulkPasteArea').value = '';
-        document.getElementById('bulkPreviewArea').style.display = 'none';
-        if (typeof loadAdminDashboard === 'function') loadAdminDashboard(true);
-      } else {
-        Swal.fire('Lỗi', res ? res.message : 'Lỗi xử lý', 'error');
-      }
-    }).withFailureHandler(showError).executeSmartStudentImport({
-      items: window.validBulkStudents,
-      syncGroupMode: "SYNC_OPEN_SUBJECTS",
-      check30RuleForLate: true,
-      unbanLateTuition: true
+  window.executeSmartImportHub = function(){
+    if (!smartItemsCache.length) return;
+    var sels = document.querySelectorAll('#smartHubPreviewBody .smart-act-sel');
+    var items = smartItemsCache.map(function(it, i){
+      var act = sels[i] ? sels[i].value : (it.defaultAction || 'SKIP');
+      return Object.assign({}, it, { action: act });
     });
+    var syncMode = (document.getElementById('hubSyncOpen') && document.getElementById('hubSyncOpen').checked) ? 'SYNC_OPEN_SUBJECTS' : 'KEEP_OLD';
+    var rule30 = !!(document.getElementById('hubRule30') && document.getElementById('hubRule30').checked);
+
+    if (typeof showLoading === 'function') showLoading('Đang lưu & đồng bộ thông minh...');
+    google.script.run
+      .withSuccessHandler(function(res){
+        if (typeof hideLoadingScreen === 'function') hideLoadingScreen();
+        if (res && res.success) {
+          Swal.fire('Thành công!', res.message || 'Đã cập nhật danh sách sinh viên thông minh!', 'success');
+          if (typeof loadAdminDashboard === 'function') loadAdminDashboard(true);
+        } else {
+          Swal.fire('Thông báo', (res && res.message) || 'Có lỗi xảy ra', 'error');
+        }
+      })
+      .withFailureHandler(function(err){
+        if (typeof hideLoadingScreen === 'function') hideLoadingScreen();
+        Swal.fire('Lỗi', (err && err.message) || 'Lỗi kết nối', 'error');
+      })
+      .executeSmartStudentImport({ items: items, syncGroupMode: syncMode, check30RuleForLate: rule30 });
   };
 
-  // 7. Xóa trắng / Thay mới toàn bộ Sheet SINH_VIEN An toàn
-  window.confirmArchiveAndReplaceSheet = function() {
-    var rawText = document.getElementById('smReplacePasteInput').value.trim();
-    var newRows = rawText ? parseRawExcelStudentLines(rawText) : [];
+  window.previewSmartStudentImportWeb = function(){
+    var raw = (document.getElementById('bulkPasteArea') || {}).value;
+    var rows = parseExcelRows(raw);
+    if (!rows.length) return Swal.fire('Lưu ý', 'Vui lòng dán dữ liệu từ Excel trước!', 'warning');
+    if (typeof showLoading === 'function') showLoading('Đang phân tích thông minh...');
+    google.script.run
+      .withSuccessHandler(function(res){
+        if (typeof hideLoadingScreen === 'function') hideLoadingScreen();
+        if (!res || !res.success) return Swal.fire('Lỗi', (res && res.message) || 'Không phân tích được', 'error');
+        var opt = document.getElementById('smartImportOptions');
+        if (opt) opt.style.display = 'block';
+        var prevArea = document.getElementById('bulkPreviewArea');
+        if (prevArea) prevArea.style.display = 'block';
+        smartItemsCache = res.items || [];
+        var tb = document.getElementById('bulkPreviewTable');
+        if (tb) {
+          tb.innerHTML = smartItemsCache.map(function(it){
+            return '<tr><td><b>' + escS(it.mssv) + '</b></td><td>' + escS((it.ho||'') + ' ' + (it.ten||'')) + '</td><td>' + escS(it.lop) + '</td><td><small>' + escS(it.diffText) + '</small></td></tr>';
+          }).join('');
+        }
+        var btn = document.getElementById('btnSubmitBulk');
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fas fa-brain me-1"></i> Lưu Thông minh (' + smartItemsCache.length + ' dòng)';
+          btn.onclick = function(){
+            var items = smartItemsCache.map(function(it){ return Object.assign({}, it, { action: it.defaultAction || 'INSERT' }); });
+            var rule30 = !!(document.getElementById('chkSmartRule30') && document.getElementById('chkSmartRule30').checked);
+            var syncMode = (document.getElementById('chkSmartSyncOpen') && document.getElementById('chkSmartSyncOpen').checked) ? 'SYNC_OPEN_SUBJECTS' : 'KEEP_OLD';
+            if (typeof showLoading === 'function') showLoading('Đang thực thi...');
+            google.script.run
+              .withSuccessHandler(function(r2){
+                if (typeof hideLoadingScreen === 'function') hideLoadingScreen();
+                if (r2 && r2.success) {
+                  Swal.fire('Thành công!', r2.message, 'success');
+                  if (typeof loadAdminDashboard === 'function') loadAdminDashboard(true);
+                } else {
+                  Swal.fire('Lỗi', (r2 && r2.message) || 'Thất bại', 'error');
+                }
+              })
+              .withFailureHandler(function(e2){ if (typeof hideLoadingScreen === 'function') hideLoadingScreen(); Swal.fire('Lỗi', e2.message, 'error'); })
+              .executeSmartStudentImport({ items: items, syncGroupMode: syncMode, check30RuleForLate: rule30 });
+          };
+        }
+      })
+      .withFailureHandler(function(err){
+        if (typeof hideLoadingScreen === 'function') hideLoadingScreen();
+        Swal.fire('Lỗi', (err && err.message) || 'Lỗi kết nối', 'error');
+      })
+      .previewSmartStudentImport(rows);
+  };
 
+  window.executeArchiveAndNewSemester = function(){
+    var rows = parseExcelRows((document.getElementById('newSemPaste') || {}).value);
+    var preserve = !!(document.getElementById('chkPreserveTuition') && document.getElementById('chkPreserveTuition').checked);
     Swal.fire({
-      title: '🛡️ Xác nhận Sao lưu & Làm mới Sheet SINH_VIEN?',
-      html:
-        '<div class="text-start small" style="line-height:1.6;">' +
-          '• Hệ thống sẽ <b>đóng băng toàn bộ các môn đang dạy vào DS_MON</b> (kèm trạng thái học phí & ghi chú cấm thi).<br>' +
-          '• Toàn bộ sinh viên hiện tại sẽ được cất vào <b>LICH_SU_SINH_VIEN</b> (có thể khôi phục lại 100% bất cứ lúc nào).<br>' +
-          (newRows.length > 0
-            ? ('• Sau đó nạp <b>' + newRows.length + ' sinh viên mới</b> bạn vừa dán vào sheet <code>SINH_VIEN</code>.')
-            : '• Sau đó làm sạch sheet <code>SINH_VIEN</code> để bạn thêm danh sách mới.') +
-        '</div>',
+      title: 'Xác nhận cập nhật DS Kỳ mới?',
+      html: rows.length
+        ? 'Hệ thống sẽ sao lưu toàn bộ danh sách cũ vào <b>LICH_SU_SINH_VIEN</b>, chốt <b>DS_MON</b> và nạp <b>' + rows.length + ' sinh viên kỳ mới</b>.'
+        : 'Bạn đang để trống ô dán Excel. Hệ thống sẽ chỉ sao lưu &amp; dọn sạch sheet <b>SINH_VIEN</b> cũ.',
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#dc2626',
-      confirmButtonText: 'Đồng ý thực hiện an toàn',
+      confirmButtonText: 'Thực hiện ngay',
       cancelButtonText: 'Hủy'
-    }).then(function(r) {
-      if (r.isConfirmed) {
-        showLoading('Đang đóng băng các môn cũ, sao lưu lịch sử & cập nhật SINH_VIEN...');
-        google.script.run.withSuccessHandler(function(res) {
+    }).then(function(r){
+      if (!r.isConfirmed) return;
+      if (typeof showLoading === 'function') showLoading('Đang sao lưu & cập nhật kỳ mới...');
+      google.script.run
+        .withSuccessHandler(function(res){
+          if (typeof hideLoadingScreen === 'function') hideLoadingScreen();
           if (res && res.success) {
-            Swal.fire({ title: 'Thành công!', html: res.message, icon: 'success' });
-            document.getElementById('smReplacePasteInput').value = '';
+            Swal.fire('Hoàn tất!', res.message, 'success');
             if (typeof loadAdminDashboard === 'function') loadAdminDashboard(true);
           } else {
-            Swal.fire('Lỗi', res ? res.message : 'Không thể thực hiện', 'error');
+            Swal.fire('Lỗi', (res && res.message) || 'Không thực hiện được', 'error');
           }
-        }).withFailureHandler(showError).archiveAndClearStudentSheet(newRows, true);
-      }
+        })
+        .withFailureHandler(function(err){
+          if (typeof hideLoadingScreen === 'function') hideLoadingScreen();
+          Swal.fire('Lỗi', (err && err.message) || 'Lỗi kết nối', 'error');
+        })
+        .archiveAndClearStudentSheet(rows, preserve);
     });
   };
 
-  // 8. Tải Lịch sử thay đổi & Hoàn tác 1 chạm (Undo)
-  window.loadSmartStudentHistory = function() {
-    var tbody = document.getElementById('smHistoryTableBody');
-    tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-primary fw-bold"><span class="spinner-border spinner-border-sm me-2"></span>Đang tải lịch sử lưu vết...</td></tr>';
-
-    google.script.run.withSuccessHandler(function(res) {
-      if (!res || !res.success) {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-danger">Lỗi tải lịch sử</td></tr>';
-        return;
-      }
-      var batches = res.batches || [];
-      if (batches.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-muted"><i class="fas fa-check-circle fs-3 d-block mb-2 text-success"></i>Chưa có đợt thay đổi nào được ghi nhận.</td></tr>';
-        return;
-      }
-
-      var html = '';
-      batches.forEach(function(b) {
-        var sampleHtml = b.samples.map(function(s) {
-          return '<div class="mb-1">• <b>' + escapeHtml(s.hoten) + '</b> (<code>' + escapeHtml(s.oldMssv || s.newMssv) + '</code>): ' +
-            '<span class="text-primary">' + escapeHtml(s.detail) + '</span></div>';
-        }).join('');
-        if (b.count > b.samples.length) {
-          sampleHtml += '<div class="text-muted fst-italic">... và ' + (b.count - b.samples.length) + ' dòng khác</div>';
+  window.loadStudentChangeHistoryWeb = function(){
+    var box = document.getElementById('svHistoryBox');
+    if (box) box.innerHTML = '<div class="text-center text-muted py-4"><i class="fas fa-spinner fa-spin me-2"></i>Đang tải lịch sử sinh viên...</div>';
+    google.script.run
+      .withSuccessHandler(function(res){
+        if (!res || !res.success) {
+          box.innerHTML = '<div class="alert alert-danger">' + escS((res && res.message) || 'Lỗi tải dữ liệu') + '</div>';
+          return;
         }
-
-        html += '<tr>' +
-          '<td><div class="fw-bold text-dark">' + escapeHtml(b.timeStr) + '</div><code class="small text-muted">' + escapeHtml(b.batchId) + '</code></td>' +
-          '<td><span class="badge bg-primary-soft text-primary">' + escapeHtml(b.type) + '</span></td>' +
-          '<td class="text-center fw-bold">' + b.count + ' dòng</td>' +
-          '<td class="small">' + sampleHtml + '</td>' +
-          '<td class="text-center">' +
-            '<button type="button" class="btn btn-sm btn-outline-danger fw-bold" onclick="confirmRollbackStudentBatch(\'' + escapeHtml(b.batchId) + '\')">' +
-              '<i class="fas fa-undo me-1"></i> Hoàn tác' +
-            '</button>' +
-          '</td>' +
-        '</tr>';
-      });
-      tbody.innerHTML = html;
-    }).withFailureHandler(showError).getStudentChangeHistory();
+        var batches = res.batches || [];
+        if (!batches.length) {
+          box.innerHTML = '<div class="text-center text-muted py-4">Chưa có đợt thay đổi danh sách sinh viên nào.</div>';
+          return;
+        }
+        box.innerHTML = batches.map(function(b){
+          return '<div class="d-flex justify-content-between align-items-center p-2 border-bottom gap-2">' +
+            '<div>' +
+              '<div class="fw-bold small">' + escS(b.batchId || b.id) + ' <span class="badge bg-info text-dark">' + escS(b.count || 0) + ' SV</span></div>' +
+              '<div class="small text-muted">' + escS(b.timestamp || '') + ' — ' + escS(b.summary || b.type || '') + '</div>' +
+            '</div>' +
+            '<button type="button" class="btn btn-sm btn-outline-warning fw-bold flex-shrink-0" onclick="rollbackSvBatchWeb(\'' + escS(b.batchId || b.id).replace(/'/g, "\\'") + '\')"><i class="fas fa-undo me-1"></i>Khôi phục</button>' +
+          '</div>';
+        }).join('');
+      })
+      .withFailureHandler(function(err){
+        if (box) box.innerHTML = '<div class="alert alert-danger">' + escS(err && err.message ? err.message : err) + '</div>';
+      })
+      .getStudentChangeHistory();
   };
 
-  window.confirmRollbackStudentBatch = function(batchId) {
+  window.rollbackSvBatchWeb = function(batchId){
     Swal.fire({
-      title: '⏪ Hoàn tác đợt thay đổi này?',
-      html: 'Hệ thống sẽ khôi phục lại dữ liệu sinh viên (gồm MSSV, Họ tên, Lớp, Nhóm, Học phí) về đúng trạng thái trước đợt <code>' + escapeHtml(batchId) + '</code>.',
-      icon: 'question',
+      title: 'Khôi phục đợt danh sách này?',
+      text: 'Danh sách sinh viên sẽ được khôi phục về trạng thái trước đợt ' + batchId,
+      icon: 'warning',
       showCancelButton: true,
       confirmButtonText: 'Khôi phục ngay',
       cancelButtonText: 'Hủy'
-    }).then(function(r) {
-      if (r.isConfirmed) {
-        showLoading('Đang khôi phục dữ liệu cũ...');
-        google.script.run.withSuccessHandler(function(res) {
+    }).then(function(r){
+      if (!r.isConfirmed) return;
+      if (typeof showLoading === 'function') showLoading('Đang khôi phục danh sách sinh viên...');
+      google.script.run
+        .withSuccessHandler(function(res){
+          if (typeof hideLoadingScreen === 'function') hideLoadingScreen();
           if (res && res.success) {
-            Swal.fire({ title: 'Đã khôi phục!', html: res.message, icon: 'success' });
-            loadSmartStudentHistory();
+            Swal.fire('Đã khôi phục!', res.message, 'success');
+            window.loadStudentChangeHistoryWeb();
             if (typeof loadAdminDashboard === 'function') loadAdminDashboard(true);
           } else {
-            Swal.fire('Lỗi', res ? res.message : 'Không thể hoàn tác', 'error');
+            Swal.fire('Lỗi', (res && res.message) || 'Không khôi phục được', 'error');
           }
-        }).withFailureHandler(showError).rollbackStudentHistoryBatch(batchId);
-      }
+        })
+        .withFailureHandler(function(err){
+          if (typeof hideLoadingScreen === 'function') hideLoadingScreen();
+          Swal.fire('Lỗi', (err && err.message) || 'Lỗi kết nối', 'error');
+        })
+        .rollbackStudentHistoryBatch(batchId);
     });
   };
 })();
 </script>
+<div class="modal fade" id="smartTeacherScheduleModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+      <div class="modal-header text-white" style="background: linear-gradient(135deg, #2563eb, #1d4ed8); border-radius: 16px 16px 0 0;">
+        <div>
+          <h5 class="modal-title fw-bold mb-0"><i class="fas fa-magic me-2"></i>Xếp lịch Thông minh theo Giảng viên</h5>
+          <small class="opacity-75">Chọn lịch rảnh của GV → Tự cân bằng Sáng Nhóm 1 / Chiều Nhóm 2, tránh trùng SV &amp; khai thác tối đa buổi trống</small>
+        </div>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
+      </div>
+      <div class="modal-body p-3">
+        <div class="row g-3 mb-3 align-items-end">
+          <div class="col-12 col-md-5">
+            <label class="form-label fw-bold small">1. Chọn Giảng viên</label>
+            <select id="stsGvSelect" class="form-select" onchange="loadSmartTeacherOptions()"></select>
+          </div>
+          <div class="col-6 col-md-3">
+            <label class="form-label fw-bold small">2. Tuần (Thứ 2 đầu tuần)</label>
+            <input type="date" id="stsWeekInput" class="form-control" onchange="renderSmartTeacherGrid()">
+          </div>
+          <div class="col-6 col-md-4">
+            <label class="form-label fw-bold small">Phòng mặc định (nếu có)</label>
+            <input type="text" id="stsDefaultRoom" class="form-control" placeholder="Để trống nếu chưa xếp phòng">
+          </div>
+        </div>
 
+        <div class="mb-3">
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+            <label class="form-label fw-bold small mb-0">3. Tick các buổi Giảng viên báo RẢNH trong tuần:</label>
+            <div class="d-flex flex-wrap gap-1">
+              <button type="button" class="btn btn-xs btn-outline-primary py-0 px-2" style="font-size:0.75rem;" onclick="stsQuickPick([0,1,2], ['Ca Sáng','Ca Chiều'])">T2-T3-T4 (Sáng+Chiều)</button>
+              <button type="button" class="btn btn-xs btn-outline-primary py-0 px-2" style="font-size:0.75rem;" onclick="stsQuickPick([1,2,3], ['Ca Sáng','Ca Chiều'])">T3-T4-T5 (Sáng+Chiều)</button>
+              <button type="button" class="btn btn-xs btn-outline-primary py-0 px-2" style="font-size:0.75rem;" onclick="stsQuickPick([0,1,2,3,4], ['Ca Sáng','Ca Chiều'])">T2→T6 (Sáng+Chiều)</button>
+              <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-2" style="font-size:0.75rem;" onclick="stsQuickPick([], [])">Bỏ chọn hết</button>
+            </div>
+          </div>
+          <div class="table-responsive border rounded">
+            <table class="table table-sm table-bordered text-center align-middle mb-0" style="font-size:0.82rem;">
+              <thead class="table-light" id="stsGridHead"></thead>
+              <tbody id="stsGridBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+            <label class="form-label fw-bold small mb-0">4. Các môn GV đang phụ trách (còn quỹ buổi):</label>
+            <div class="d-flex flex-wrap gap-3">
+              <div class="form-check mb-0">
+                <input class="form-check-input" type="checkbox" id="stsAllowSecondPass" checked>
+                <label class="form-check-label small" for="stsAllowSecondPass">Cho phép học 2 ca/ngày nếu hết lựa chọn</label>
+              </div>
+              <div class="form-check form-switch mb-0">
+                <input class="form-check-input" type="checkbox" id="stsReplaceOutside">
+                <label class="form-check-label small fw-bold text-danger" for="stsReplaceOutside">Tự động xóa lịch đã copy ngoài khung rảnh tuần này để xếp lại</label>
+              </div>
+            </div>
+          </div>
+          <div id="stsAssignList" class="border rounded p-2" style="max-height:200px;overflow-y:auto;"></div>
+        </div>
+
+        <div class="text-end mb-3">
+          <button type="button" class="btn btn-primary fw-bold px-4" onclick="runSmartTeacherPreview()"><i class="fas fa-cogs me-1"></i>Phân tích &amp; Gợi ý Lịch Thông minh</button>
+        </div>
+
+        <div id="stsPreviewArea" style="display:none;">
+          <div id="stsPreviewStats" class="mb-2"></div>
+          <div id="stsDeleteBox" class="mb-2"></div>
+          <div class="table-responsive border rounded" style="max-height:260px;">
+            <table class="table table-sm table-hover align-middle mb-0" style="font-size:0.84rem;">
+              <thead class="table-light" style="position:sticky;top:0;">
+                <tr><th>Ngày</th><th>Ca</th><th>Lớp / Nhóm</th><th>Môn học</th><th>Phòng</th><th></th></tr>
+              </thead>
+              <tbody id="stsPreviewBody"></tbody>
+            </table>
+          </div>
+          <div id="stsUnplacedBox" class="mt-2"></div>
+          <div class="text-end mt-3">
+            <button type="button" class="btn btn-success fw-bold px-4" id="btnSaveSmartTeacher" onclick="saveSmartTeacherPlan()"><i class="fas fa-save me-1"></i>Lưu toàn bộ lịch này vào TKB</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var stsState = { assignments: [], busySlots: {}, plan: [], deleteItems: [] };
+  function escT(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+
+  function getMondayIso(dateStr){
+    if (typeof snapToMonday === 'function') return snapToMonday(dateStr);
+    var d = dateStr ? new Date(dateStr + 'T00:00:00') : new Date();
+    var day = d.getDay();
+    var diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    d.setDate(diff);
+    return d.toISOString().slice(0, 10);
+  }
+
+  function addDaysIso(iso, n){
+    var d = new Date(iso + 'T00:00:00');
+    d.setDate(d.getDate() + n);
+    var pad = function(x){ return String(x).padStart(2, '0'); };
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  }
+
+  window.openSmartTeacherScheduleModal = function(){
+    var wEl = document.getElementById('stsWeekInput');
+    var admW = document.getElementById('adminWeekInput');
+    if (wEl) wEl.value = getMondayIso((admW && admW.value) || new Date().toISOString().slice(0, 10));
+    var modalEl = document.getElementById('smartTeacherScheduleModal');
+    if (window.bootstrap && bootstrap.Modal) bootstrap.Modal.getOrCreateInstance(modalEl).show();
+    window.loadSmartTeacherOptions();
+  };
+
+  window.loadSmartTeacherOptions = function(){
+    var sel = document.getElementById('stsGvSelect');
+    var gv = sel ? sel.value : '';
+    var week = (document.getElementById('stsWeekInput') || {}).value || '';
+    var box = document.getElementById('stsAssignList');
+    if (box) box.innerHTML = '<div class="text-center text-muted py-3"><i class="fas fa-spinner fa-spin me-2"></i>Đang tải phân công &amp; lịch bận...</div>';
+    google.script.run
+      .withSuccessHandler(function(res){
+        if (!res || !res.success) {
+          if (box) box.innerHTML = '<div class="alert alert-danger py-2">' + escT((res && res.message) || 'Lỗi tải dữ liệu') + '</div>';
+          return;
+        }
+        if (sel && sel.options.length === 0) {
+          sel.innerHTML = (res.gvList || []).map(function(g){
+            return '<option value="' + escT(g.user) + '">' + escT(g.name) + ' (' + escT(g.user) + ')</option>';
+          }).join('');
+          if (sel.value && !gv) {
+            window.loadSmartTeacherOptions();
+            return;
+          }
+        }
+        stsState.assignments = res.assignments || [];
+        stsState.busySlots = res.busySlots || {};
+        window.renderSmartTeacherGrid();
+        window.renderSmartTeacherAssignments();
+      })
+      .withFailureHandler(function(err){
+        if (box) box.innerHTML = '<div class="alert alert-danger py-2">' + escT(err && err.message ? err.message : err) + '</div>';
+      })
+      .getLecturerScheduleOptions(gv, week);
+  };
+
+  window.renderSmartTeacherGrid = function(){
+    var wEl = document.getElementById('stsWeekInput');
+    var mon = getMondayIso(wEl ? wEl.value : '');
+    if (wEl && wEl.value !== mon) wEl.value = mon;
+    var days = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'CN'];
+    var cas = ['Ca Sáng', 'Ca Chiều', 'Ca Tối'];
+
+    var head = '<tr><th>Ca</th>';
+    for (var d = 0; d < 7; d++) {
+      var iso = addDaysIso(mon, d);
+      var p = iso.split('-');
+      head += '<th>' + days[d] + '<br><small class="text-muted">' + p[2] + '/' + p[1] + '</small></th>';
+    }
+    head += '</tr>';
+    document.getElementById('stsGridHead').innerHTML = head;
+
+    var body = '';
+    cas.forEach(function(ca){
+      body += '<tr><td class="fw-bold">' + ca + '</td>';
+      for (var d = 0; d < 7; d++) {
+        var iso = addDaysIso(mon, d);
+        var busy = stsState.busySlots[iso + '|' + ca];
+        if (busy) {
+          body += '<td class="bg-danger-subtle text-danger" title="' + escT(busy) + '"><small class="fw-bold">Đã có lịch</small></td>';
+        } else {
+          body += '<td><input type="checkbox" class="form-check-input sts-slot-chk" data-day-idx="' + d + '" data-ngay="' + iso + '" data-ca="' + ca + '"></td>';
+        }
+      }
+      body += '</tr>';
+    });
+    document.getElementById('stsGridBody').innerHTML = body;
+  };
+
+  window.stsQuickPick = function(dayIdxs, caList){
+    var chks = document.querySelectorAll('.sts-slot-chk');
+    chks.forEach(function(c){
+      var d = parseInt(c.getAttribute('data-day-idx'), 10);
+      var ca = c.getAttribute('data-ca');
+      c.checked = (dayIdxs.indexOf(d) !== -1 && caList.indexOf(ca) !== -1);
+    });
+  };
+
+  window.renderSmartTeacherAssignments = function(){
+    var box = document.getElementById('stsAssignList');
+    if (!box) return;
+    var list = stsState.assignments.filter(function(a){ return a.remaining > 0; });
+    if (!list.length) {
+      box.innerHTML = '<div class="text-center text-muted py-3">Giảng viên này không còn môn nào có quỹ buổi trống.</div>';
+      return;
+    }
+    box.innerHTML = list.map(function(a, i){
+      var grpTxt = a.groups.map(function(g){ return g.name + ' (' + g.used + ')'; }).join(', ');
+      var mergeHtml = a.isMultiGroup
+        ? '<div class="form-check form-switch mb-0"><input class="form-check-input sts-asg-merge" type="checkbox" data-idx="' + i + '"><label class="form-check-label small">Dạy 2 nhóm chung 1 ca</label></div>'
+        : '<span class="badge bg-light text-muted border">Lớp đơn</span>';
+      return '<div class="d-flex justify-content-between align-items-center p-2 border-bottom gap-2 flex-wrap">' +
+        '<div class="form-check mb-0">' +
+          '<input class="form-check-input sts-asg-chk" type="checkbox" data-idx="' + i + '" checked>' +
+          '<label class="form-check-label"><b>' + escT(a.mon) + '</b> — <span class="text-primary">' + escT(a.lop) + '</span> <span class="badge bg-success-subtle text-success">Còn ' + a.remaining + ' buổi</span><br><small class="text-muted">Nhóm: ' + escT(grpTxt) + '</small></label>' +
+        '</div>' +
+        '<div>' + mergeHtml + '</div>' +
+      '</div>';
+    }).join('');
+  };
+
+  window.runSmartTeacherPreview = function(){
+    var gv = (document.getElementById('stsGvSelect') || {}).value;
+    var defRoom = (document.getElementById('stsDefaultRoom') || {}).value.trim();
+    var allow2 = !!(document.getElementById('stsAllowSecondPass') && document.getElementById('stsAllowSecondPass').checked);
+    var replaceOutside = !!(document.getElementById('stsReplaceOutside') && document.getElementById('stsReplaceOutside').checked);
+    var weekMon = getMondayIso((document.getElementById('stsWeekInput') || {}).value || '');
+    var weekSun = addDaysIso(weekMon, 6);
+
+    var slots = [];
+    document.querySelectorAll('.sts-slot-chk:checked').forEach(function(c){
+      slots.push({ ngay: c.getAttribute('data-ngay'), ca: c.getAttribute('data-ca'), phong: defRoom });
+    });
+    if (!slots.length) return Swal.fire('Lưu ý', 'Vui lòng tick ít nhất 1 buổi rảnh của giảng viên!', 'warning');
+
+    var availAssigns = stsState.assignments.filter(function(a){ return a.remaining > 0; });
+    var chosenAssigns = [];
+    document.querySelectorAll('.sts-asg-chk:checked').forEach(function(c){
+      var idx = parseInt(c.getAttribute('data-idx'), 10);
+      var a = availAssigns[idx];
+      if (!a) return;
+      var mEl = document.querySelector('.sts-asg-merge[data-idx="' + idx + '"]');
+      chosenAssigns.push({
+        lop: a.lop,
+        mon: a.mon,
+        groups: a.groups.map(function(g){ return g.name; }),
+        allowMergeGroups: !!(mEl && mEl.checked)
+      });
+    });
+    if (!chosenAssigns.length) return Swal.fire('Lưu ý', 'Vui lòng chọn ít nhất 1 môn học!', 'warning');
+
+    if (typeof showLoading === 'function') showLoading('Đang chạy thuật toán xếp lịch thông minh...');
+    google.script.run
+      .withSuccessHandler(function(res){
+        if (typeof hideLoadingScreen === 'function') hideLoadingScreen();
+        if (!res || !res.success) return Swal.fire('Lỗi', (res && res.message) || 'Không phân tích được', 'error');
+        stsState.plan = res.plan || [];
+        stsState.deleteItems = res.toDelete || [];
+        var keptProt = res.keptProtected || [];
+        var st = res.stats || {};
+        document.getElementById('stsPreviewStats').innerHTML =
+          '<div class="alert alert-success py-2 mb-0 small fw-semibold">' +
+          'Đã xếp được <b>' + (st.scheduledCount || 0) + '/' + (st.totalRequested || 0) + '</b> buổi rảnh' +
+          (st.deleteCount ? (' — <span class="text-danger">Sẽ xóa <b>' + st.deleteCount + '</b> buổi ngoài khung rảnh</span>') : '') +
+          (st.unplacedCount ? (' — <span class="text-warning text-dark">' + st.unplacedCount + ' buổi chưa xếp được</span>') : '') +
+          '</div>';
+        var delHtml = '';
+        if (stsState.deleteItems.length > 0) {
+          delHtml += '<div class="alert alert-danger py-2 small mb-1"><b><i class="fas fa-trash-alt me-1"></i>Các buổi ngoài khung rảnh sẽ tự động xóa (' + stsState.deleteItems.length + ' buổi):</b><br>' +
+            stsState.deleteItems.map(function(d){ return '• ' + escT(d.ngayVN + ' · ' + d.ca + ' — ' + d.lop + ' — ' + d.mon); }).join('<br>') + '</div>';
+        }
+        if (keptProt.length > 0) {
+          delHtml += '<div class="alert alert-info py-2 small mb-0"><b><i class="fas fa-shield-alt me-1"></i>Giữ nguyên (' + keptProt.length + ' buổi được bảo vệ):</b><br>' +
+            keptProt.map(function(k){ return '• ' + escT(k.ngayVN + ' · ' + k.ca + ' — ' + k.mon + ' (' + k.reason + ')'); }).join('<br>') + '</div>';
+        }
+        document.getElementById('stsDeleteBox').innerHTML = delHtml;
+        document.getElementById('stsPreviewBody').innerHTML = stsState.plan.map(function(p, i){
+          return '<tr>' +
+            '<td><b>' + escT(p.ngayVN) + '</b></td>' +
+            '<td>' + escT(p.ca) + '</td>' +
+            '<td><span class="badge bg-primary-subtle text-primary">' + escT(p.lop) + '</span></td>' +
+            '<td>' + escT(p.mon) + '</td>' +
+            '<td><input type="text" class="form-control form-control-sm sts-plan-room" data-idx="' + i + '" value="' + escT(p.phong || '') + '" placeholder="Chưa xếp"></td>' +
+            '<td><button type="button" class="btn btn-sm btn-outline-danger py-0" onclick="stsRemovePlanItem(' + i + ')"><i class="fas fa-times"></i></button></td>' +
+          '</tr>';
+        }).join('');
+
+        var unp = res.unplaced || [];
+        document.getElementById('stsUnplacedBox').innerHTML = unp.length
+          ? '<div class="alert alert-warning py-2 small mb-0"><b>Các ca chưa xếp được:</b><br>' + unp.map(function(u){ return '• ' + escT(u.ngayVN + ' ' + u.ca + ': ' + u.reason); }).join('<br>') + '</div>'
+          : '';
+        document.getElementById('stsPreviewArea').style.display = 'block';
+        document.getElementById('btnSaveSmartTeacher').disabled = (stsState.plan.length === 0 && stsState.deleteItems.length === 0);
+      })
+      .withFailureHandler(function(err){
+        if (typeof hideLoadingScreen === 'function') hideLoadingScreen();
+        Swal.fire('Lỗi', (err && err.message) || 'Lỗi kết nối', 'error');
+      })
+      .previewSmartTeacherSchedule({ gv: gv, slots: slots, assignments: chosenAssigns, allowSecondPass: allow2, replaceOutsideSlots: replaceOutside, weekStart: weekMon, weekEnd: weekSun });
+  };
+
+  window.stsRemovePlanItem = function(idx){
+    stsState.plan.splice(idx, 1);
+    document.getElementById('stsPreviewBody').innerHTML = stsState.plan.map(function(p, i){
+      return '<tr><td><b>' + escT(p.ngayVN) + '</b></td><td>' + escT(p.ca) + '</td><td><span class="badge bg-primary-subtle text-primary">' + escT(p.lop) + '</span></td><td>' + escT(p.mon) + '</td><td><input type="text" class="form-control form-control-sm sts-plan-room" data-idx="' + i + '" value="' + escT(p.phong || '') + '"></td><td><button type="button" class="btn btn-sm btn-outline-danger py-0" onclick="stsRemovePlanItem(' + i + ')"><i class="fas fa-times"></i></button></td></tr>';
+    }).join('');
+    document.getElementById('btnSaveSmartTeacher').disabled = stsState.plan.length === 0;
+  };
+
+  window.saveSmartTeacherPlan = function(){
+    if (!stsState.plan.length && !stsState.deleteItems.length) return;
+    var gv = (document.getElementById('stsGvSelect') || {}).value;
+    var items = stsState.plan.map(function(p, i){
+      var rInp = document.querySelector('.sts-plan-room[data-idx="' + i + '"]');
+      return { ngay: p.ngay, ca: p.ca, lop: p.lop, mon: p.mon, phong: rInp ? rInp.value.trim() : (p.phong || '') };
+    });
+    if (typeof showLoading === 'function') showLoading('Đang dọn lịch cũ & lưu lịch thông minh...');
+    google.script.run
+      .withSuccessHandler(function(res){
+        if (typeof hideLoadingScreen === 'function') hideLoadingScreen();
+        if (res && res.success) {
+          Swal.fire('Thành công!', res.message, 'success');
+          if (typeof loadAdminTimetableMatrix === 'function') loadAdminTimetableMatrix(true);
+          if (typeof loadAdminDashboard === 'function') loadAdminDashboard(true);
+          window.loadSmartTeacherOptions();
+          document.getElementById('stsPreviewArea').style.display = 'none';
+        } else {
+          Swal.fire('Không lưu được', (res && res.message) || 'Lỗi không xác định', 'error');
+        }
+      })
+      .withFailureHandler(function(err){
+        if (typeof hideLoadingScreen === 'function') hideLoadingScreen();
+        Swal.fire('Lỗi', (err && err.message) || 'Lỗi kết nối', 'error');
+      })
+      .saveSmartTeacherSchedule({ gv: gv, items: items, deleteItems: stsState.deleteItems });
+  };
+})();
+</script>
 </body>
 </html>
