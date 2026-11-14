@@ -11151,33 +11151,39 @@ var wb = XLSX.utils.book_new();
     window.loadSmartTeacherOptions();
   };
 
+  var stsLoadSeq = 0;
   window.loadSmartTeacherOptions = function(){
     var sel = document.getElementById('stsGvSelect');
     var gv = sel ? sel.value : '';
     var week = (document.getElementById('stsWeekInput') || {}).value || '';
     var box = document.getElementById('stsAssignList');
+    var prevArea = document.getElementById('stsPreviewArea');
+    if (prevArea) prevArea.style.display = 'none';
     if (box) box.innerHTML = '<div class="text-center text-muted py-3"><i class="fas fa-spinner fa-spin me-2"></i>Đang tải phân công &amp; lịch bận...</div>';
+    var seq = ++stsLoadSeq;
     google.script.run
       .withSuccessHandler(function(res){
-        if (!res || !res.success) {
-          if (box) box.innerHTML = '<div class="alert alert-danger py-2">' + escT((res && res.message) || 'Lỗi tải dữ liệu') + '</div>';
-          return;
-        }
-        if (sel && sel.options.length === 0) {
-          sel.innerHTML = (res.gvList || []).map(function(g){
-            return '<option value="' + escT(g.user) + '">' + escT(g.name) + ' (' + escT(g.user) + ')</option>';
-          }).join('');
-          if (sel.value && !gv) {
-            window.loadSmartTeacherOptions();
+        if (seq !== stsLoadSeq) return;
+        try {
+          if (!res || !res.success) {
+            if (box) box.innerHTML = '<div class="alert alert-danger py-2">' + escT((res && res.message) || 'Lỗi tải dữ liệu') + '</div>';
             return;
           }
+          if (sel && sel.options.length === 0) {
+            sel.innerHTML = (res.gvList || []).map(function(g){
+              return '<option value="' + escT(g.user) + '">' + escT(g.name) + ' (' + escT(g.user) + ')</option>';
+            }).join('');
+          }
+          stsState.assignments = Array.isArray(res.assignments) ? res.assignments : [];
+          stsState.busySlots = res.busySlots || {};
+          window.renderSmartTeacherGrid();
+          window.renderSmartTeacherAssignments();
+        } catch (ex) {
+          if (box) box.innerHTML = '<div class="alert alert-danger py-2">Lỗi hiển thị dữ liệu: ' + escT(ex && ex.message ? ex.message : ex) + '</div>';
         }
-        stsState.assignments = res.assignments || [];
-        stsState.busySlots = res.busySlots || {};
-        window.renderSmartTeacherGrid();
-        window.renderSmartTeacherAssignments();
       })
       .withFailureHandler(function(err){
+        if (seq !== stsLoadSeq) return;
         if (box) box.innerHTML = '<div class="alert alert-danger py-2">' + escT(err && err.message ? err.message : err) + '</div>';
       })
       .getLecturerScheduleOptions(gv, week);
@@ -11206,7 +11212,11 @@ var wb = XLSX.utils.book_new();
         var iso = addDaysIso(mon, d);
         var busy = stsState.busySlots[iso + '|' + ca];
         if (busy) {
-          body += '<td class="bg-danger-subtle text-danger" title="' + escT(busy) + '"><small class="fw-bold">Đã có lịch</small></td>';
+          var shortBusy = busy.length > 26 ? busy.slice(0, 26) + '…' : busy;
+          body += '<td class="bg-danger-subtle" title="Đã có lịch: ' + escT(busy) + '">' +
+            '<input type="checkbox" class="form-check-input sts-slot-chk" data-day-idx="' + d + '" data-ngay="' + iso + '" data-ca="' + ca + '">' +
+            '<div class="text-danger fw-bold mt-1" style="font-size:0.68rem;line-height:1.15;">Đã có: ' + escT(shortBusy) + '</div>' +
+          '</td>';
         } else {
           body += '<td><input type="checkbox" class="form-check-input sts-slot-chk" data-day-idx="' + d + '" data-ngay="' + iso + '" data-ca="' + ca + '"></td>';
         }
@@ -11281,7 +11291,7 @@ var wb = XLSX.utils.book_new();
     if (typeof showLoading === 'function') showLoading('Đang chạy thuật toán xếp lịch thông minh...');
     google.script.run
       .withSuccessHandler(function(res){
-        if (typeof hideLoadingScreen === 'function') hideLoadingScreen();
+        if (typeof Swal !== 'undefined') Swal.close();
         if (!res || !res.success) return Swal.fire('Lỗi', (res && res.message) || 'Không phân tích được', 'error');
         stsState.plan = res.plan || [];
         stsState.deleteItems = res.toDelete || [];
@@ -11322,7 +11332,7 @@ var wb = XLSX.utils.book_new();
         document.getElementById('btnSaveSmartTeacher').disabled = (stsState.plan.length === 0 && stsState.deleteItems.length === 0);
       })
       .withFailureHandler(function(err){
-        if (typeof hideLoadingScreen === 'function') hideLoadingScreen();
+        if (typeof Swal !== 'undefined') Swal.close();
         Swal.fire('Lỗi', (err && err.message) || 'Lỗi kết nối', 'error');
       })
       .previewSmartTeacherSchedule({ gv: gv, slots: slots, assignments: chosenAssigns, allowSecondPass: allow2, replaceOutsideSlots: replaceOutside, weekStart: weekMon, weekEnd: weekSun });
@@ -11333,7 +11343,7 @@ var wb = XLSX.utils.book_new();
     document.getElementById('stsPreviewBody').innerHTML = stsState.plan.map(function(p, i){
       return '<tr><td><b>' + escT(p.ngayVN) + '</b></td><td>' + escT(p.ca) + '</td><td><span class="badge bg-primary-subtle text-primary">' + escT(p.lop) + '</span></td><td>' + escT(p.mon) + '</td><td><input type="text" class="form-control form-control-sm sts-plan-room" data-idx="' + i + '" value="' + escT(p.phong || '') + '"></td><td><button type="button" class="btn btn-sm btn-outline-danger py-0" onclick="stsRemovePlanItem(' + i + ')"><i class="fas fa-times"></i></button></td></tr>';
     }).join('');
-    document.getElementById('btnSaveSmartTeacher').disabled = stsState.plan.length === 0;
+    document.getElementById('btnSaveSmartTeacher').disabled = (stsState.plan.length === 0 && stsState.deleteItems.length === 0);
   };
 
   window.saveSmartTeacherPlan = function(){
@@ -11346,7 +11356,7 @@ var wb = XLSX.utils.book_new();
     if (typeof showLoading === 'function') showLoading('Đang dọn lịch cũ & lưu lịch thông minh...');
     google.script.run
       .withSuccessHandler(function(res){
-        if (typeof hideLoadingScreen === 'function') hideLoadingScreen();
+        if (typeof Swal !== 'undefined') Swal.close();
         if (res && res.success) {
           Swal.fire('Thành công!', res.message, 'success');
           if (typeof loadAdminTimetableMatrix === 'function') loadAdminTimetableMatrix(true);
@@ -11358,7 +11368,7 @@ var wb = XLSX.utils.book_new();
         }
       })
       .withFailureHandler(function(err){
-        if (typeof hideLoadingScreen === 'function') hideLoadingScreen();
+        if (typeof Swal !== 'undefined') Swal.close();
         Swal.fire('Lỗi', (err && err.message) || 'Lỗi kết nối', 'error');
       })
       .saveSmartTeacherSchedule({ gv: gv, items: items, deleteItems: stsState.deleteItems });
