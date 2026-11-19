@@ -598,6 +598,7 @@
     .modal-content { border-radius: var(--radius-lg); border: none; box-shadow: var(--shadow-lg); }
     .modal-header { border-bottom: 1px solid var(--border); padding: 20px 24px; background: var(--bg-app); border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
     .modal-title { font-weight: 700; font-size: 1.1rem; color: var(--text-main); }
+    .modal-header.text-white .modal-title, .modal-header.text-white small { color: #ffffff !important; }
     .modal-body { padding: 24px; }
     .modal-footer { border-top: 1px solid var(--border); padding: 16px 24px; background: var(--bg-app); border-radius: 0 0 var(--radius-lg) var(--radius-lg); }
     @media (max-width: 991px) { .tkb-layout { flex-direction: column; height: auto; } .tkb-sidebar { width: 100%; padding-right: 0; } .tkb-main { min-height: 500px; } }
@@ -4878,9 +4879,14 @@ function loadData(isInitial) {
     
     classLockState = "";
     if (rawStudents.length > 0) {
-      var s = rawStudents[0].diem.lockState;
-      if (s === "LOCKED_ALL" || s === "LOCKED") classLockState = "LOCKED_ALL";
-      else if (s === "LOCKED_GK") classLockState = "LOCKED_GK";
+      var hasLA = false, hasGK = false;
+      for (var li = 0; li < rawStudents.length; li++) {
+        var st = rawStudents[li] && rawStudents[li].diem ? rawStudents[li].diem.lockState : "";
+        if (st === "LOCKED_ALL" || st === "LOCKED") { hasLA = true; break; }
+        if (st === "LOCKED_GK") hasGK = true;
+      }
+      if (hasLA) classLockState = "LOCKED_ALL";
+      else if (hasGK) classLockState = "LOCKED_GK";
     }
     
     // 1. Lọc sạch rác, chỉ lấy đúng tên Nhóm (và HỌC LẠI)
@@ -6602,8 +6608,15 @@ function previewBulkStudents() {
     '</tr>';
   });
 
+  var smartOpt = document.getElementById('smartImportOptions');
+  if (smartOpt) smartOpt.style.display = 'none';
   document.getElementById('bulkPreviewArea').style.display = 'block';
-  document.getElementById('btnSubmitBulk').disabled = !hasValid;
+  var btnSubmit = document.getElementById('btnSubmitBulk');
+  if (btnSubmit) {
+    btnSubmit.disabled = !hasValid;
+    btnSubmit.innerHTML = '<i class="fas fa-save"></i> Xác nhận Bổ sung Hàng loạt';
+    btnSubmit.onclick = submitBulkStudents;
+  }
 }
 
 function submitBulkStudents() {
@@ -10544,7 +10557,7 @@ var wb = XLSX.utils.book_new();
       if (typeof showLoading === 'function') showLoading('Đang hoàn tác dữ liệu...');
       google.script.run
         .withSuccessHandler(function(res){
-          if (typeof hideLoadingScreen === 'function') hideLoadingScreen();
+          if (typeof Swal !== 'undefined') Swal.close();
           if (res && res.success) {
             if (window.__lastActionId === actionId) {
               window.__lastActionId = '';
@@ -10560,7 +10573,7 @@ var wb = XLSX.utils.book_new();
           }
         })
         .withFailureHandler(function(err){
-          if (typeof hideLoadingScreen === 'function') hideLoadingScreen();
+          if (typeof Swal !== 'undefined') Swal.close();
           Swal.fire('Lỗi', (err && err.message) || 'Lỗi kết nối', 'error');
         })
         .undoActivityAction(actionId, getActorObj());
@@ -10630,7 +10643,7 @@ var wb = XLSX.utils.book_new();
     if (typeof showLoading === 'function') showLoading('Đang thêm môn học...');
     google.script.run
       .withSuccessHandler(function(res){
-        if (typeof hideLoadingScreen === 'function') hideLoadingScreen();
+        if (typeof Swal !== 'undefined') Swal.close();
         if (res && res.success) {
           if (inp) inp.value = '';
           syncMonDropdowns(res.monList);
@@ -10641,7 +10654,7 @@ var wb = XLSX.utils.book_new();
         }
       })
       .withFailureHandler(function(err){
-        if (typeof hideLoadingScreen === 'function') hideLoadingScreen();
+        if (typeof Swal !== 'undefined') Swal.close();
         Swal.fire('Lỗi', (err && err.message) || 'Lỗi kết nối', 'error');
       })
       .addSubjectName(name);
@@ -10661,7 +10674,7 @@ var wb = XLSX.utils.book_new();
       if (typeof showLoading === 'function') showLoading('Đang xóa môn học...');
       google.script.run
         .withSuccessHandler(function(res){
-          if (typeof hideLoadingScreen === 'function') hideLoadingScreen();
+          if (typeof Swal !== 'undefined') Swal.close();
           if (res && res.success) {
             syncMonDropdowns(res.monList);
             window.renderSubjectManagerList(res.monList);
@@ -10671,7 +10684,7 @@ var wb = XLSX.utils.book_new();
           }
         })
         .withFailureHandler(function(err){
-          if (typeof hideLoadingScreen === 'function') hideLoadingScreen();
+          if (typeof Swal !== 'undefined') Swal.close();
           Swal.fire('Lỗi', (err && err.message) || 'Lỗi kết nối', 'error');
         })
         .deleteSubjectName(name);
@@ -10704,7 +10717,7 @@ var wb = XLSX.utils.book_new();
       <div class="modal-header text-white" style="background: linear-gradient(135deg, #0f766e, #0d9488); border-radius: 16px 16px 0 0;">
         <div>
           <h5 class="modal-title fw-bold mb-0"><i class="fas fa-user-shield me-2"></i>Cập nhật SV Thông minh / Điền Nhóm &amp; Kỳ mới</h5>
-          <small class="opacity-75">Phân tích trùng 4 cấp độ, điền nhóm đồng bộ môn đang mở, cập nhật danh sách kỳ mới &amp; khôi phục</small>
+          <small class="opacity-75">Phân tích trùng 4 cấp độ, bảo toàn 100% dữ liệu môn cũ đã phân, cập nhật danh sách kỳ mới &amp; khôi phục</small>
         </div>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
       </div>
@@ -10722,30 +10735,34 @@ var wb = XLSX.utils.book_new();
               Dán từ Excel theo 6 cột (cách nhau bằng Tab): <code>MSSV | Họ lót | Tên | Ngày sinh | Lớp | Nhóm (nếu có)</code>
             </div>
             <textarea id="smartHubPaste" class="form-control mb-2" rows="4" placeholder="Dán danh sách sinh viên từ Excel vào đây..."></textarea>
-            <div class="d-flex flex-wrap gap-3 align-items-center justify-content-between mb-3">
+            <div class="d-flex flex-wrap gap-3 align-items-center justify-content-between mb-2">
               <div class="d-flex flex-wrap gap-3">
                 <div class="form-check">
                   <input class="form-check-input" type="checkbox" id="hubRule30" checked>
-                  <label class="form-check-label small fw-semibold" for="hubRule30">Xét điều kiện &ge; 30% buổi học (SV trễ)</label>
+                  <label class="form-check-label small fw-semibold" for="hubRule30">Xét điều kiện &ge; 30% buổi học (SV mới bổ sung trễ)</label>
                 </div>
                 <div class="form-check">
                   <input class="form-check-input" type="checkbox" id="hubSyncOpen" checked>
-                  <label class="form-check-label small fw-semibold" for="hubSyncOpen">Đồng bộ nhóm sang các môn đang mở</label>
+                  <label class="form-check-label small fw-semibold" for="hubSyncOpen">Đồng bộ an toàn sang môn đang mở khớp lớp</label>
                 </div>
               </div>
               <button type="button" class="btn btn-primary fw-bold" onclick="runSmartPreviewHub()"><i class="fas fa-search me-1"></i>Phân tích thông minh (4 cấp độ)</button>
             </div>
+            <div class="small text-muted mb-2">
+              <i class="fas fa-shield-alt text-success me-1"></i><b>Chế độ bảo vệ môn cũ:</b> Các môn đã khóa, môn của lớp khác và danh sách nhóm cố định đã phân công luôn được giữ nguyên 100%, không bị ghi đè hay mất dữ liệu.
+            </div>
             <div id="smartHubSummary" class="mb-2"></div>
             <div id="smartHubPreviewWrap" style="display:none;">
-              <div class="table-responsive border rounded" style="max-height: 300px;">
+              <div class="table-responsive border rounded" style="max-height: 320px;">
                 <table class="table table-sm table-bordered align-middle mb-0" style="font-size:0.84rem;">
-                  <thead class="table-light" style="position:sticky;top:0;">
-                    <tr><th>MSSV</th><th>Họ Tên</th><th>Lớp / Nhóm</th><th>Phân tích hệ thống</th><th>Hành động</th></tr>
+                  <thead class="table-light" style="position:sticky;top:0;z-index:2;">
+                    <tr><th>MSSV</th><th>Họ Tên</th><th>Lớp / Nhóm</th><th>Phân tích hệ thống</th><th style="min-width:175px;">Hành động</th></tr>
                   </thead>
                   <tbody id="smartHubPreviewBody"></tbody>
                 </table>
               </div>
-              <div class="text-end mt-3">
+              <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3">
+                <div id="smartHubActionStats" class="small text-muted"></div>
                 <button type="button" class="btn btn-success fw-bold" onclick="executeSmartImportHub()"><i class="fas fa-check-circle me-1"></i>Xác nhận Lưu Thông minh</button>
               </div>
             </div>
@@ -10754,7 +10771,7 @@ var wb = XLSX.utils.book_new();
           <!-- TAB 2: CẬP NHẬT DS KỲ MỚI -->
           <div class="tab-pane fade" id="tabNewSemester">
             <div class="alert alert-warning small py-2 mb-2">
-              <b>An toàn tuyệt đối:</b> Hệ thống sẽ tự động chốt toàn bộ bảng điểm các môn hiện có vào <code>DS_MON</code> và sao lưu toàn bộ <code>SINH_VIEN</code> cũ vào <code>LICH_SU_SINH_VIEN</code> trước khi nạp danh sách kỳ mới.
+              <b>An toàn tuyệt đối:</b> Hệ thống sẽ chốt mới các môn chưa chụp, nâng cấp tại chỗ bản chụp <code>DS_MON</code> cũ (không ghi đè danh sách SV cũ), bảo toàn trạng thái học phí lớp ghép và sao lưu toàn bộ <code>SINH_VIEN</code> cũ vào <code>LICH_SU_SINH_VIEN</code> trước khi nạp danh sách kỳ mới.
             </div>
             <textarea id="newSemPaste" class="form-control mb-2" rows="5" placeholder="Dán danh sách sinh viên KỲ MỚI từ Excel (MSSV | Họ lót | Tên | Ngày sinh | Lớp | Nhóm)... Để trống nếu chỉ muốn lưu trữ & dọn sheet cũ."></textarea>
             <div class="form-check mb-3">
@@ -10783,7 +10800,11 @@ var wb = XLSX.utils.book_new();
 <script>
 (function(){
   var smartItemsCache = [];
+  var smartHubFilterMode = 'ALL';
   function escS(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function closeSwalLoading(){
+    try { if (typeof Swal !== 'undefined' && Swal.isVisible()) Swal.close(); } catch (e) {}
+  }
 
   function parseExcelRows(rawText){
     var lines = String(rawText || '').split(/\r?\n/).map(function(l){ return l.trim(); }).filter(Boolean);
@@ -10792,7 +10813,7 @@ var wb = XLSX.utils.book_new();
       var cols = line.split('\t');
       if (cols.length < 2) cols = line.split(',');
       var mssv = (cols[0] || '').trim();
-      if (!mssv || mssv.toLowerCase() === 'mssv') return;
+      if (!mssv || mssv.toLowerCase() === 'mssv' || mssv.toLowerCase() === 'stt') return;
       out.push({
         mssv: mssv,
         ho: (cols[1] || '').trim(),
@@ -10810,36 +10831,137 @@ var wb = XLSX.utils.book_new();
     if (window.bootstrap && bootstrap.Modal) bootstrap.Modal.getOrCreateInstance(el).show();
   };
 
-  function renderSmartPreview(res, summaryId, wrapId, bodyId){
-    smartItemsCache = res.items || [];
-    var c = res.counts || {};
-    var sumEl = document.getElementById(summaryId);
-    if (sumEl) {
-      sumEl.innerHTML = '<div class="d-flex flex-wrap gap-2 small">' +
-        '<span class="badge bg-success">Mới: ' + (c.NEW || 0) + '</span>' +
-        '<span class="badge bg-warning text-dark">Khác thông tin: ' + (c.INFO_DIFF || 0) + '</span>' +
-        '<span class="badge bg-info text-dark">Đổi MSSV (trùng người): ' + (c.IDENTITY_MATCH || 0) + '</span>' +
-        '<span class="badge bg-secondary">Trùng hoàn toàn: ' + (c.EXACT_DUP || 0) + '</span>' +
-      '</div>';
+  function updateSmartHubActionStats(){
+    var stEl = document.getElementById('smartHubActionStats');
+    if (!stEl) return;
+    var nIns = 0, nUpd = 0, nMig = 0, nSkip = 0;
+    smartItemsCache.forEach(function(it){
+      var a = it._chosenAction || it.defaultAction || 'SKIP';
+      if (a === 'INSERT') nIns++;
+      else if (a === 'UPDATE') nUpd++;
+      else if (a === 'MIGRATE_MSSV') nMig++;
+      else nSkip++;
+    });
+    stEl.innerHTML = 'Dự kiến thực thi: <b class="text-success">' + nIns + ' thêm mới</b> · <b class="text-warning-emphasis">' + nUpd + ' cập nhật</b> · <b class="text-info-emphasis">' + nMig + ' đổi MSSV</b> · <span class="text-muted">' + nSkip + ' bỏ qua</span>';
+  }
+
+  window.onSmartHubActChange = function(idx, val){
+    if (smartItemsCache[idx]) {
+      smartItemsCache[idx]._chosenAction = val;
+      updateSmartHubActionStats();
     }
-    var tbody = document.getElementById(bodyId);
-    if (tbody) {
-      tbody.innerHTML = smartItemsCache.map(function(it, i){
-        var act = it.defaultAction || 'SKIP';
-        return '<tr>' +
+  };
+
+  window.setSmartHubFilter = function(mode){
+    smartHubFilterMode = mode || 'ALL';
+    renderSmartHubTableBody();
+    updateSmartHubFilterButtons();
+  };
+
+  function updateSmartHubFilterButtons(){
+    var btns = document.querySelectorAll('#smartHubSummary .smart-filter-btn');
+    btns.forEach(function(b){
+      var m = b.getAttribute('data-mode');
+      if (m === smartHubFilterMode) {
+        b.classList.add('active', 'fw-bold');
+      } else {
+        b.classList.remove('active', 'fw-bold');
+      }
+    });
+  }
+
+  function renderSmartHubTableBody(){
+    var tbody = document.getElementById('smartHubPreviewBody');
+    if (!tbody) return;
+    var rowsHtml = [];
+    // Đưa các dòng cần xử lý (NEW / UPDATE / IDENTITY_MATCH / INVALID) lên trước để dễ rà soát
+    var prio = { INVALID: 0, IDENTITY_MATCH: 1, NEW: 2, UPDATE: 3, UNCHANGED: 4 };
+    var indexed = smartItemsCache.map(function(it, i){ return { it: it, i: i }; });
+    indexed.sort(function(a, b){
+      var pa = prio[a.it.category] !== undefined ? prio[a.it.category] : 5;
+      var pb = prio[b.it.category] !== undefined ? prio[b.it.category] : 5;
+      return pa !== pb ? (pa - pb) : (a.i - b.i);
+    });
+
+    indexed.forEach(function(pair){
+      var it = pair.it, i = pair.i;
+      var act = it._chosenAction || it.defaultAction || 'SKIP';
+      if (smartHubFilterMode === 'ACTIONABLE' && it.category === 'UNCHANGED' && act === 'SKIP') return;
+      if (smartHubFilterMode === 'UNCHANGED' && it.category !== 'UNCHANGED') return;
+
+      var rowCls = '';
+      if (it.category === 'NEW') rowCls = it.possibleDupWarn ? 'table-warning' : 'table-success';
+      else if (it.category === 'UPDATE') rowCls = 'table-warning';
+      else if (it.category === 'IDENTITY_MATCH') rowCls = 'table-info';
+      else if (it.category === 'INVALID') rowCls = 'table-danger';
+
+      var canMigrate = !!(it.oldMssv && it.oldMssv !== it.mssv);
+      var canUpdate = !!(it.oldMssv && it.oldMssv === it.mssv && it.category !== 'INVALID');
+      var canInsert = (it.category !== 'INVALID' && it.category !== 'UPDATE' && it.category !== 'UNCHANGED');
+
+      rowsHtml.push(
+        '<tr class="' + rowCls + '">' +
           '<td><b>' + escS(it.mssv) + '</b>' + (it.oldMssv ? '<br><small class="text-muted">Cũ: ' + escS(it.oldMssv) + '</small>' : '') + '</td>' +
-          '<td>' + escS((it.ho || '') + ' ' + (it.ten || '')) + '</td>' +
+          '<td>' + escS((it.ho || '') + ' ' + (it.ten || '')) + (it.ns ? '<br><small class="text-muted">' + escS(it.ns) + '</small>' : '') + '</td>' +
           '<td>' + escS(it.lop) + (it.nhom ? ' <span class="badge bg-light text-dark border">' + escS(it.nhom) + '</span>' : '') + '</td>' +
           '<td><small>' + escS(it.diffText || it.category) + '</small></td>' +
-          '<td><select class="form-select form-select-sm smart-act-sel" data-idx="' + i + '">' +
-            '<option value="INSERT"' + (act === 'INSERT' ? ' selected' : '') + '>Thêm mới</option>' +
-            '<option value="UPDATE"' + (act === 'UPDATE' ? ' selected' : '') + '>Cập nhật / Điền nhóm</option>' +
-            '<option value="MIGRATE_MSSV"' + (act === 'MIGRATE_MSSV' ? ' selected' : '') + '>Đổi sang MSSV mới</option>' +
+          '<td><select class="form-select form-select-sm smart-act-sel" data-idx="' + i + '" onchange="onSmartHubActChange(' + i + ', this.value)">' +
+            '<option value="INSERT"' + (act === 'INSERT' ? ' selected' : '') + (!canInsert ? ' disabled' : '') + '>Thêm mới</option>' +
+            '<option value="UPDATE"' + (act === 'UPDATE' ? ' selected' : '') + (!canUpdate ? ' disabled' : '') + '>Cập nhật / Điền nhóm</option>' +
+            '<option value="MIGRATE_MSSV"' + (act === 'MIGRATE_MSSV' ? ' selected' : '') + (!canMigrate ? ' disabled' : '') + '>Đổi sang MSSV mới</option>' +
             '<option value="SKIP"' + (act === 'SKIP' ? ' selected' : '') + '>Bỏ qua</option>' +
           '</select></td>' +
-        '</tr>';
-      }).join('');
+        '</tr>'
+      );
+    });
+
+    if (!rowsHtml.length) {
+      tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">Không có dòng nào thuộc bộ lọc đang chọn.</td></tr>';
+    } else {
+      tbody.innerHTML = rowsHtml.join('');
     }
+    updateSmartHubActionStats();
+  }
+
+  function renderSmartPreview(res, summaryId, wrapId){
+    smartItemsCache = (res.items || []).map(function(it){
+      return Object.assign({}, it, { _chosenAction: it.defaultAction || 'SKIP' });
+    });
+    var c = res.counts || {};
+    var cntNew = c.NEW || 0;
+    var cntUpd = (c.UPDATE !== undefined ? c.UPDATE : c.INFO_DIFF) || 0;
+    var cntMig = c.IDENTITY_MATCH || 0;
+    var cntSame = (c.UNCHANGED !== undefined ? c.UNCHANGED : c.EXACT_DUP) || 0;
+    var cntInv = c.INVALID || 0;
+    var cntDupPaste = c.DUP_IN_PASTE || 0;
+    var cntWarnName = c.WARNING_NAME || 0;
+    var cntActionable = cntNew + cntUpd + cntMig + cntInv;
+
+    // Nếu vừa có dòng cần xử lý vừa có nhiều dòng trùng 100%, ưu tiên bật bộ lọc "Cần xử lý" cho gọn mắt (vẫn chuyển sang Tất cả 1 chạm)
+    smartHubFilterMode = (cntActionable > 0 && cntSame > 0) ? 'ACTIONABLE' : 'ALL';
+
+    var sumEl = document.getElementById(summaryId);
+    if (sumEl) {
+      sumEl.innerHTML =
+        '<div class="d-flex flex-wrap justify-content-between align-items-center gap-2">' +
+          '<div class="d-flex flex-wrap gap-1 small">' +
+            '<span class="badge bg-success">Mới: ' + cntNew + '</span>' +
+            '<span class="badge bg-warning text-dark">Khác thông tin / Điền nhóm: ' + cntUpd + '</span>' +
+            '<span class="badge bg-info text-dark">Đổi MSSV (trùng người): ' + cntMig + '</span>' +
+            '<span class="badge bg-secondary">Trùng hoàn toàn: ' + cntSame + '</span>' +
+            (cntInv > 0 ? '<span class="badge bg-danger">Thiếu thông tin: ' + cntInv + '</span>' : '') +
+            (cntDupPaste > 0 ? '<span class="badge bg-dark">Tự gộp trùng khi dán: ' + cntDupPaste + '</span>' : '') +
+            (cntWarnName > 0 ? '<span class="badge bg-warning text-dark border border-danger">⚠️ Trùng tên khác NS: ' + cntWarnName + '</span>' : '') +
+          '</div>' +
+          '<div class="btn-group btn-group-sm" role="group">' +
+            '<button type="button" class="btn btn-outline-primary smart-filter-btn" data-mode="ACTIONABLE" onclick="setSmartHubFilter(\'ACTIONABLE\')">Cần xử lý (' + cntActionable + ')</button>' +
+            '<button type="button" class="btn btn-outline-secondary smart-filter-btn" data-mode="ALL" onclick="setSmartHubFilter(\'ALL\')">Tất cả (' + smartItemsCache.length + ')</button>' +
+            '<button type="button" class="btn btn-outline-secondary smart-filter-btn" data-mode="UNCHANGED" onclick="setSmartHubFilter(\'UNCHANGED\')">Trùng 100% (' + cntSame + ')</button>' +
+          '</div>' +
+        '</div>';
+    }
+    renderSmartHubTableBody();
+    updateSmartHubFilterButtons();
     var wrap = document.getElementById(wrapId);
     if (wrap) wrap.style.display = 'block';
   }
@@ -10850,12 +10972,12 @@ var wb = XLSX.utils.book_new();
     if (typeof showLoading === 'function') showLoading('Đang phân tích 4 cấp độ...');
     google.script.run
       .withSuccessHandler(function(res){
-        if (typeof hideLoadingScreen === 'function') hideLoadingScreen();
+        closeSwalLoading();
         if (!res || !res.success) return Swal.fire('Lỗi', (res && res.message) || 'Không phân tích được', 'error');
-        renderSmartPreview(res, 'smartHubSummary', 'smartHubPreviewWrap', 'smartHubPreviewBody');
+        renderSmartPreview(res, 'smartHubSummary', 'smartHubPreviewWrap');
       })
       .withFailureHandler(function(err){
-        if (typeof hideLoadingScreen === 'function') hideLoadingScreen();
+        closeSwalLoading();
         Swal.fire('Lỗi', (err && err.message) || 'Lỗi kết nối', 'error');
       })
       .previewSmartStudentImport(rows);
@@ -10863,30 +10985,68 @@ var wb = XLSX.utils.book_new();
 
   window.executeSmartImportHub = function(){
     if (!smartItemsCache.length) return;
-    var sels = document.querySelectorAll('#smartHubPreviewBody .smart-act-sel');
-    var items = smartItemsCache.map(function(it, i){
-      var act = sels[i] ? sels[i].value : (it.defaultAction || 'SKIP');
-      return Object.assign({}, it, { action: act });
+    var items = smartItemsCache.map(function(it){
+      var act = it._chosenAction || it.defaultAction || 'SKIP';
+      var copy = Object.assign({}, it, { action: act });
+      delete copy._chosenAction;
+      return copy;
     });
-    var syncMode = (document.getElementById('hubSyncOpen') && document.getElementById('hubSyncOpen').checked) ? 'SYNC_OPEN_SUBJECTS' : 'KEEP_OLD';
+    var nIns = 0, nUpd = 0, nMig = 0, nSkip = 0;
+    items.forEach(function(it){
+      if (it.action === 'INSERT') nIns++;
+      else if (it.action === 'UPDATE') nUpd++;
+      else if (it.action === 'MIGRATE_MSSV') nMig++;
+      else nSkip++;
+    });
+    if (nIns + nUpd + nMig === 0) {
+      return Swal.fire('Không có thay đổi', 'Tất cả ' + nSkip + ' dòng đang được đặt là "Bỏ qua". Không có dữ liệu nào cần lưu!', 'info');
+    }
+
+    var syncOpen = !!(document.getElementById('hubSyncOpen') && document.getElementById('hubSyncOpen').checked);
+    var syncMode = syncOpen ? 'SYNC_OPEN_SUBJECTS' : 'KEEP_OLD';
     var rule30 = !!(document.getElementById('hubRule30') && document.getElementById('hubRule30').checked);
 
-    if (typeof showLoading === 'function') showLoading('Đang lưu & đồng bộ thông minh...');
-    google.script.run
-      .withSuccessHandler(function(res){
-        if (typeof hideLoadingScreen === 'function') hideLoadingScreen();
-        if (res && res.success) {
-          Swal.fire('Thành công!', res.message || 'Đã cập nhật danh sách sinh viên thông minh!', 'success');
-          if (typeof loadAdminDashboard === 'function') loadAdminDashboard(true);
-        } else {
-          Swal.fire('Thông báo', (res && res.message) || 'Có lỗi xảy ra', 'error');
-        }
-      })
-      .withFailureHandler(function(err){
-        if (typeof hideLoadingScreen === 'function') hideLoadingScreen();
-        Swal.fire('Lỗi', (err && err.message) || 'Lỗi kết nối', 'error');
-      })
-      .executeSmartStudentImport({ items: items, syncGroupMode: syncMode, check30RuleForLate: rule30 });
+    Swal.fire({
+      title: 'Xác nhận Lưu Thông minh?',
+      html:
+        '<div class="text-start small">' +
+          '• Thêm mới: <b class="text-success">' + nIns + '</b> SV<br>' +
+          '• Cập nhật thông tin / Điền nhóm: <b class="text-warning-emphasis">' + nUpd + '</b> SV<br>' +
+          '• Đổi MSSV (chuyển điểm &amp; điểm danh): <b class="text-info-emphasis">' + nMig + '</b> SV<br>' +
+          '• Bỏ qua: <b>' + nSkip + '</b> SV<hr class="my-2">' +
+          '<span class="text-success"><i class="fas fa-shield-alt me-1"></i>Các môn cũ đã khóa, môn của lớp khác và nhóm cố định đã phân được bảo toàn 100%. Mọi thay đổi đều lưu vết để hoàn tác 1 chạm ở Tab Lịch sử.</span>' +
+        '</div>',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#198754',
+      confirmButtonText: 'Lưu ngay',
+      cancelButtonText: 'Xem lại'
+    }).then(function(cf){
+      if (!cf.isConfirmed) return;
+      if (typeof showLoading === 'function') showLoading('Đang lưu & đồng bộ thông minh...');
+      google.script.run
+        .withSuccessHandler(function(res){
+          closeSwalLoading();
+          if (res && res.success) {
+            Swal.fire({ title: 'Thành công!', html: '<div class="text-start small" style="max-height:55vh;overflow-y:auto;">' + (res.message || 'Đã cập nhật danh sách sinh viên thông minh!') + '</div>', icon: 'success' });
+            smartItemsCache = [];
+            var wrap = document.getElementById('smartHubPreviewWrap');
+            if (wrap) wrap.style.display = 'none';
+            var sumEl = document.getElementById('smartHubSummary');
+            if (sumEl) sumEl.innerHTML = '';
+            var pasteEl = document.getElementById('smartHubPaste');
+            if (pasteEl) pasteEl.value = '';
+            if (typeof loadAdminDashboard === 'function') loadAdminDashboard(true);
+          } else {
+            Swal.fire('Thông báo', (res && res.message) || 'Có lỗi xảy ra', 'error');
+          }
+        })
+        .withFailureHandler(function(err){
+          closeSwalLoading();
+          Swal.fire('Lỗi', (err && err.message) || 'Lỗi kết nối', 'error');
+        })
+        .executeSmartStudentImport({ items: items, syncGroupMode: syncMode, check30RuleForLate: rule30 });
+    });
   };
 
   window.previewSmartStudentImportWeb = function(){
@@ -10896,7 +11056,7 @@ var wb = XLSX.utils.book_new();
     if (typeof showLoading === 'function') showLoading('Đang phân tích thông minh...');
     google.script.run
       .withSuccessHandler(function(res){
-        if (typeof hideLoadingScreen === 'function') hideLoadingScreen();
+        closeSwalLoading();
         if (!res || !res.success) return Swal.fire('Lỗi', (res && res.message) || 'Không phân tích được', 'error');
         var opt = document.getElementById('smartImportOptions');
         if (opt) opt.style.display = 'block';
@@ -10906,35 +11066,42 @@ var wb = XLSX.utils.book_new();
         var tb = document.getElementById('bulkPreviewTable');
         if (tb) {
           tb.innerHTML = smartItemsCache.map(function(it){
-            return '<tr><td><b>' + escS(it.mssv) + '</b></td><td>' + escS((it.ho||'') + ' ' + (it.ten||'')) + '</td><td>' + escS(it.lop) + '</td><td><small>' + escS(it.diffText) + '</small></td></tr>';
+            var cls = it.category === 'NEW' ? 'table-success' : (it.category === 'UPDATE' ? 'table-warning' : (it.category === 'IDENTITY_MATCH' ? 'table-info' : (it.category === 'INVALID' ? 'table-danger' : '')));
+            return '<tr class="' + cls + '"><td><b>' + escS(it.mssv) + '</b></td><td>' + escS((it.ho||'') + ' ' + (it.ten||'')) + '</td><td>' + escS(it.lop) + (it.nhom ? ' (' + escS(it.nhom) + ')' : '') + '</td><td><small>' + escS(it.diffText) + '</small></td></tr>';
           }).join('');
         }
+        var actionableCount = smartItemsCache.filter(function(it){ return (it.defaultAction || 'SKIP') !== 'SKIP'; }).length;
         var btn = document.getElementById('btnSubmitBulk');
         if (btn) {
-          btn.disabled = false;
-          btn.innerHTML = '<i class="fas fa-brain me-1"></i> Lưu Thông minh (' + smartItemsCache.length + ' dòng)';
+          btn.disabled = (actionableCount === 0);
+          btn.innerHTML = '<i class="fas fa-brain me-1"></i> Lưu Thông minh (' + actionableCount + '/' + smartItemsCache.length + ' dòng thay đổi)';
           btn.onclick = function(){
-            var items = smartItemsCache.map(function(it){ return Object.assign({}, it, { action: it.defaultAction || 'INSERT' }); });
+            var items = smartItemsCache.map(function(it){ return Object.assign({}, it, { action: it.defaultAction || 'SKIP' }); });
             var rule30 = !!(document.getElementById('chkSmartRule30') && document.getElementById('chkSmartRule30').checked);
             var syncMode = (document.getElementById('chkSmartSyncOpen') && document.getElementById('chkSmartSyncOpen').checked) ? 'SYNC_OPEN_SUBJECTS' : 'KEEP_OLD';
             if (typeof showLoading === 'function') showLoading('Đang thực thi...');
             google.script.run
               .withSuccessHandler(function(r2){
-                if (typeof hideLoadingScreen === 'function') hideLoadingScreen();
+                closeSwalLoading();
                 if (r2 && r2.success) {
-                  Swal.fire('Thành công!', r2.message, 'success');
+                  Swal.fire({ title: 'Thành công!', html: r2.message, icon: 'success' });
+                  var bsModal = bootstrap.Modal.getInstance(document.getElementById('modalBoSung'));
+                  if (bsModal) bsModal.hide();
+                  var pEl = document.getElementById('bulkPasteArea');
+                  if (pEl) pEl.value = '';
+                  if (prevArea) prevArea.style.display = 'none';
                   if (typeof loadAdminDashboard === 'function') loadAdminDashboard(true);
                 } else {
                   Swal.fire('Lỗi', (r2 && r2.message) || 'Thất bại', 'error');
                 }
               })
-              .withFailureHandler(function(e2){ if (typeof hideLoadingScreen === 'function') hideLoadingScreen(); Swal.fire('Lỗi', e2.message, 'error'); })
+              .withFailureHandler(function(e2){ closeSwalLoading(); Swal.fire('Lỗi', (e2 && e2.message) || 'Lỗi kết nối', 'error'); })
               .executeSmartStudentImport({ items: items, syncGroupMode: syncMode, check30RuleForLate: rule30 });
           };
         }
       })
       .withFailureHandler(function(err){
-        if (typeof hideLoadingScreen === 'function') hideLoadingScreen();
+        closeSwalLoading();
         Swal.fire('Lỗi', (err && err.message) || 'Lỗi kết nối', 'error');
       })
       .previewSmartStudentImport(rows);
@@ -10946,8 +11113,8 @@ var wb = XLSX.utils.book_new();
     Swal.fire({
       title: 'Xác nhận cập nhật DS Kỳ mới?',
       html: rows.length
-        ? 'Hệ thống sẽ sao lưu toàn bộ danh sách cũ vào <b>LICH_SU_SINH_VIEN</b>, chốt <b>DS_MON</b> và nạp <b>' + rows.length + ' sinh viên kỳ mới</b>.'
-        : 'Bạn đang để trống ô dán Excel. Hệ thống sẽ chỉ sao lưu &amp; dọn sạch sheet <b>SINH_VIEN</b> cũ.',
+        ? 'Hệ thống sẽ sao lưu toàn bộ danh sách cũ vào <b>LICH_SU_SINH_VIEN</b>, chốt &amp; bảo toàn nguyên vẹn <b>DS_MON</b> và nạp <b>' + rows.length + ' sinh viên kỳ mới</b>.'
+        : 'Bạn đang để trống ô dán Excel. Hệ thống sẽ chỉ sao lưu, chốt <b>DS_MON</b> &amp; dọn sạch sheet <b>SINH_VIEN</b> cũ.',
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#dc2626',
@@ -10958,16 +11125,18 @@ var wb = XLSX.utils.book_new();
       if (typeof showLoading === 'function') showLoading('Đang sao lưu & cập nhật kỳ mới...');
       google.script.run
         .withSuccessHandler(function(res){
-          if (typeof hideLoadingScreen === 'function') hideLoadingScreen();
+          closeSwalLoading();
           if (res && res.success) {
-            Swal.fire('Hoàn tất!', res.message, 'success');
+            Swal.fire({ title: 'Hoàn tất!', html: res.message, icon: 'success' });
+            var nEl = document.getElementById('newSemPaste');
+            if (nEl) nEl.value = '';
             if (typeof loadAdminDashboard === 'function') loadAdminDashboard(true);
           } else {
             Swal.fire('Lỗi', (res && res.message) || 'Không thực hiện được', 'error');
           }
         })
         .withFailureHandler(function(err){
-          if (typeof hideLoadingScreen === 'function') hideLoadingScreen();
+          closeSwalLoading();
           Swal.fire('Lỗi', (err && err.message) || 'Lỗi kết nối', 'error');
         })
         .archiveAndClearStudentSheet(rows, preserve);
@@ -10989,12 +11158,16 @@ var wb = XLSX.utils.book_new();
           return;
         }
         box.innerHTML = batches.map(function(b){
+          var bid = b.batchId || b.id || '';
+          var ts = b.timeStr || b.timestamp || '';
+          var svCount = (b.studentCount !== undefined ? b.studentCount : b.count) || 0;
+          var desc = b.summary || b.type || '';
           return '<div class="d-flex justify-content-between align-items-center p-2 border-bottom gap-2">' +
             '<div>' +
-              '<div class="fw-bold small">' + escS(b.batchId || b.id) + ' <span class="badge bg-info text-dark">' + escS(b.count || 0) + ' SV</span></div>' +
-              '<div class="small text-muted">' + escS(b.timestamp || '') + ' — ' + escS(b.summary || b.type || '') + '</div>' +
+              '<div class="fw-bold small">' + escS(bid) + ' <span class="badge bg-info text-dark">' + escS(svCount) + ' SV</span></div>' +
+              '<div class="small text-muted">' + (ts ? ('<i class="far fa-clock me-1"></i>' + escS(ts) + ' — ') : '') + escS(desc) + '</div>' +
             '</div>' +
-            '<button type="button" class="btn btn-sm btn-outline-warning fw-bold flex-shrink-0" onclick="rollbackSvBatchWeb(\'' + escS(b.batchId || b.id).replace(/'/g, "\\'") + '\')"><i class="fas fa-undo me-1"></i>Khôi phục</button>' +
+            '<button type="button" class="btn btn-sm btn-outline-warning fw-bold flex-shrink-0" onclick="rollbackSvBatchWeb(\'' + escS(bid).replace(/'/g, "\\'") + '\')"><i class="fas fa-undo me-1"></i>Khôi phục</button>' +
           '</div>';
         }).join('');
       })
@@ -11007,7 +11180,7 @@ var wb = XLSX.utils.book_new();
   window.rollbackSvBatchWeb = function(batchId){
     Swal.fire({
       title: 'Khôi phục đợt danh sách này?',
-      text: 'Danh sách sinh viên sẽ được khôi phục về trạng thái trước đợt ' + batchId,
+      html: 'Danh sách sinh viên sẽ được khôi phục an toàn về trạng thái trước đợt <code>' + escS(batchId) + '</code>.',
       icon: 'warning',
       showCancelButton: true,
       confirmButtonText: 'Khôi phục ngay',
@@ -11017,9 +11190,9 @@ var wb = XLSX.utils.book_new();
       if (typeof showLoading === 'function') showLoading('Đang khôi phục danh sách sinh viên...');
       google.script.run
         .withSuccessHandler(function(res){
-          if (typeof hideLoadingScreen === 'function') hideLoadingScreen();
+          closeSwalLoading();
           if (res && res.success) {
-            Swal.fire('Đã khôi phục!', res.message, 'success');
+            Swal.fire({ title: 'Đã khôi phục!', html: res.message, icon: 'success' });
             window.loadStudentChangeHistoryWeb();
             if (typeof loadAdminDashboard === 'function') loadAdminDashboard(true);
           } else {
@@ -11027,7 +11200,7 @@ var wb = XLSX.utils.book_new();
           }
         })
         .withFailureHandler(function(err){
-          if (typeof hideLoadingScreen === 'function') hideLoadingScreen();
+          closeSwalLoading();
           Swal.fire('Lỗi', (err && err.message) || 'Lỗi kết nối', 'error');
         })
         .rollbackStudentHistoryBatch(batchId);
@@ -11093,7 +11266,7 @@ var wb = XLSX.utils.book_new();
                 <label class="form-check-label small" for="stsAllowSecondPass">Cho phép học 2 ca/ngày nếu hết lựa chọn</label>
               </div>
               <div class="form-check form-switch mb-0">
-                <input class="form-check-input" type="checkbox" id="stsReplaceOutside">
+                <input class="form-check-input" type="checkbox" id="stsReplaceOutside" onchange="renderSmartTeacherAssignments()">
                 <label class="form-check-label small fw-bold text-danger" for="stsReplaceOutside">Tự động xóa lịch đã copy ngoài khung rảnh tuần này để xếp lại</label>
               </div>
             </div>
@@ -11297,9 +11470,15 @@ var wb = XLSX.utils.book_new();
   window.renderSmartTeacherAssignments = function(){
     var box = document.getElementById('stsAssignList');
     if (!box) return;
-    var list = stsState.assignments.filter(function(a){ return a.remaining > 0; });
+    var replaceOutside = !!(document.getElementById('stsReplaceOutside') && document.getElementById('stsReplaceOutside').checked);
+    var list = replaceOutside
+      ? stsState.assignments.slice()
+      : stsState.assignments.filter(function(a){ return a.remaining > 0; });
     if (!list.length) {
-      box.innerHTML = '<div class="text-center text-muted py-3">Giảng viên này không còn môn nào có quỹ buổi trống.</div>';
+      var hasZeroRem = !replaceOutside && stsState.assignments.length > 0;
+      box.innerHTML = hasZeroRem
+        ? '<div class="text-center text-muted py-3 small">Giảng viên này hiện đã dùng đủ quỹ buổi (có thể do đã copy sẵn lịch tuần này).<br><b class="text-danger">Hãy bật công tắc «Tự động xóa lịch đã copy ngoài khung rảnh tuần này để xếp lại» ở trên</b> để giải phóng quỹ và xếp lại!</div>'
+        : '<div class="text-center text-muted py-3">Giảng viên này không còn môn nào đang mở có thể xếp lịch.</div>';
       return;
     }
     box.innerHTML = list.map(function(a, i){
@@ -11307,10 +11486,13 @@ var wb = XLSX.utils.book_new();
       var mergeHtml = a.isMultiGroup
         ? '<div class="form-check form-switch mb-0"><input class="form-check-input sts-asg-merge" type="checkbox" data-idx="' + i + '"><label class="form-check-label small">Dạy 2 nhóm chung 1 ca</label></div>'
         : '<span class="badge bg-light text-muted border">Lớp đơn</span>';
+      var remBadge = a.remaining > 0
+        ? '<span class="badge bg-success-subtle text-success">Còn ' + a.remaining + ' buổi</span>'
+        : '<span class="badge bg-info-subtle text-info-emphasis">Sẽ giải phóng quỹ khi xóa lịch cũ tuần này</span>';
       return '<div class="d-flex justify-content-between align-items-center p-2 border-bottom gap-2 flex-wrap">' +
         '<div class="form-check mb-0">' +
           '<input class="form-check-input sts-asg-chk" type="checkbox" data-idx="' + i + '" checked>' +
-          '<label class="form-check-label"><b>' + escT(a.mon) + '</b> — <span class="text-primary">' + escT(a.lop) + '</span> <span class="badge bg-success-subtle text-success">Còn ' + a.remaining + ' buổi</span><br><small class="text-muted">Nhóm: ' + escT(grpTxt) + '</small></label>' +
+          '<label class="form-check-label"><b>' + escT(a.mon) + '</b> — <span class="text-primary">' + escT(a.lop) + '</span> ' + remBadge + '<br><small class="text-muted">Nhóm: ' + escT(grpTxt) + '</small></label>' +
         '</div>' +
         '<div>' + mergeHtml + '</div>' +
       '</div>';
@@ -11331,7 +11513,9 @@ var wb = XLSX.utils.book_new();
     });
     if (!slots.length) return Swal.fire('Lưu ý', 'Vui lòng tick ít nhất 1 buổi rảnh của giảng viên!', 'warning');
 
-    var availAssigns = stsState.assignments.filter(function(a){ return a.remaining > 0; });
+    var availAssigns = replaceOutside
+      ? stsState.assignments.slice()
+      : stsState.assignments.filter(function(a){ return a.remaining > 0; });
     var chosenAssigns = [];
     document.querySelectorAll('.sts-asg-chk:checked').forEach(function(c){
       var idx = parseInt(c.getAttribute('data-idx'), 10);
@@ -11417,7 +11601,10 @@ var wb = XLSX.utils.book_new();
       .withSuccessHandler(function(res){
         if (typeof Swal !== 'undefined') Swal.close();
         if (res && res.success) {
-          Swal.fire('Thành công!', res.message, 'success');
+          var errNote = (Array.isArray(res.errors) && res.errors.length)
+            ? '<div class="alert alert-warning text-start small mt-2 mb-0"><b>Các buổi bị bỏ qua do trùng:</b><br>• ' + res.errors.map(escT).join('<br>• ') + '</div>'
+            : '';
+          Swal.fire({ title: 'Thành công!', html: '<div class="text-start small">' + escT(res.message) + '</div>' + errNote, icon: 'success' });
           if (typeof loadAdminTimetableMatrix === 'function') loadAdminTimetableMatrix(true);
           if (typeof loadAdminDashboard === 'function') loadAdminDashboard(true);
           window.loadSmartTeacherOptions();
