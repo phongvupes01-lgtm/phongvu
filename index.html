@@ -80,6 +80,9 @@
               callGasApi(prop, args, 1)
                 .then(function(res) {
                   if (res && res.status === "success") {
+                    if (res.stamps && typeof window.__adoptGasStamps === "function") {
+                      window.__adoptGasStamps(res.stamps);
+                    }
                     if (res.actionId && prop !== "undoActivityAction") {
                       window.__lastActionId = res.actionId;
                       window.__lastActionFunc = prop;
@@ -1617,12 +1620,102 @@ a.tp-d:hover{filter:brightness(.95)}
 #mainContentArea.stu-mode{padding:0!important;overflow:hidden!important}
 #stuArea #studentPortalContainer.sp-root{height:100%!important;width:100%;background:transparent}
 #stuArea .sp-header,#stuArea .sp-bottom{display:none!important}
-#stuArea .sp-tabs{display:flex!important;justify-content:flex-start;padding:8px 16px}
+#stuArea .sp-tabs{display:flex!important;justify-content:flex-start;padding:8px 16px;flex-wrap:wrap}
 #stuArea .sp-scroll{padding:12px 16px}
 #stuArea .sp-wrap{max-width:none}
 #stuArea .sp-search{max-width:760px}
 #stuArea .sp-weekbar{max-width:640px}
+/* Trong Admin: luôn hiện khung tìm kiếm MSSV để đổi liên tục nhiều SV không cần load lại */
+#stuArea .sp-card.col .sp-who{display:none!important}
+#stuArea .sp-card.col .sp-seg,#stuArea .sp-card.col .sp-search{display:flex!important}
+#stuArea .sp-card.col .sp-seg{display:grid!important}
 @media(max-width:767px){#stuArea{height:calc(100dvh - 56px - 62px)}#stuArea .sp-tabbtn{padding:8px 12px;font-size:.84rem}}
+
+/* ---------- 4B) Tab Báo động Điểm Quá Trình (chớp nháy liên tục đến khi SV xác nhận) ---------- */
+@keyframes spGradeBlink {
+  0%, 100% { background:#dc2626; color:#ffffff; border-color:#b91c1c; box-shadow:0 0 0 0 rgba(220,38,38,.72); transform:scale(1); }
+  50% { background:#fef2f2; color:#b91c1c; border-color:#ef4444; box-shadow:0 0 0 8px rgba(220,38,38,0); transform:scale(1.03); }
+}
+@keyframes spGradeBannerBlink {
+  0%, 100% { background:linear-gradient(135deg,#dc2626,#ea580c); color:#fff; box-shadow:0 4px 16px rgba(220,38,38,.38); }
+  50% { background:linear-gradient(135deg,#b91c1c,#f59e0b); color:#fff; box-shadow:0 6px 24px rgba(234,88,12,.55); }
+}
+@keyframes spBellShake {
+  0%, 100% { transform:rotate(0); }
+  20% { transform:rotate(-16deg); }
+  40% { transform:rotate(14deg); }
+  60% { transform:rotate(-10deg); }
+  80% { transform:rotate(8deg); }
+}
+.sp-clear-btn{border:0;background:transparent;color:#94a3b8;padding:0 4px;font-size:1rem;line-height:1;cursor:pointer;flex:none}
+.sp-clear-btn:hover{color:#dc2626}
+.sp-gbadge{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:#dc2626;color:#fff;font-size:.72rem;font-weight:900;margin-left:4px;line-height:1}
+.sp-bn{position:relative}
+.sp-gbadge-m{position:absolute;top:4px;right:calc(50% - 22px);min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:#dc2626;color:#fff;font-size:.65rem;font-weight:900;display:inline-flex;align-items:center;justify-content:center;border:2px solid #fff}
+.sp-tabbtn.nav-stu-GRADES.has-alert{border:2px solid #dc2626!important;animation:spGradeBlink 1.05s infinite ease-in-out!important;font-weight:900!important}
+.sp-tabbtn.nav-stu-GRADES.has-alert i{animation:spBellShake .9s infinite ease-in-out}
+.sp-tabbtn.nav-stu-GRADES.has-alert .sp-gbadge{background:#fff!important;color:#dc2626!important}
+.sp-bn.nav-stu-GRADES.has-alert{color:#dc2626!important;background:#fef2f2!important;animation:spGradeBlink 1.05s infinite ease-in-out!important;border-radius:10px;margin:2px}
+.sp-bn.nav-stu-GRADES.has-alert i{animation:spBellShake .9s infinite ease-in-out}
+.sp-galert{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px 12px;padding:10px 12px;border-radius:14px;margin-bottom:10px;cursor:pointer;animation:spGradeBannerBlink 1.15s infinite ease-in-out;border:2px solid #fca5a5}
+.sp-galert-l{display:flex;align-items:center;gap:10px;min-width:0}
+.sp-galert-l i{font-size:1.35rem;flex:none;animation:spBellShake .9s infinite ease-in-out}
+.sp-galert-t{font-weight:900;font-size:.92rem;line-height:1.3}
+.sp-galert-s{font-size:.78rem;opacity:.95;font-weight:600;margin-top:2px}
+.sp-galert-btn{flex:none;background:#fff;color:#b91c1c;border:0;border-radius:10px;padding:7px 14px;font-weight:900;font-size:.8rem;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.15)}
+.sp-ghead{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px}
+.sp-gcard{background:#fff;border:1.5px solid #e2e8f0;border-radius:16px;padding:14px 16px;margin-bottom:12px;box-shadow:0 2px 6px rgba(15,23,42,.05)}
+.sp-gcard.pending{border-color:#ef4444;border-left:6px solid #dc2626;background:linear-gradient(180deg,#fff5f5 0%,#ffffff 45%)}
+.sp-gcard.updated{border-color:#ea580c;border-left:6px solid #ea580c;background:linear-gradient(180deg,#fff7ed 0%,#ffffff 45%)}
+.sp-gcard.done{border-color:#a7f3d0;border-left:6px solid #059669}
+.sp-gcard.hist{border-color:#cbd5e1;border-left:5px solid #64748b;background:#f8fafc}
+.sp-gcard-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.sp-gcard-mon{font-size:1rem;font-weight:900;color:#0f172a;line-height:1.3}
+.sp-gpill{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:999px;font-size:.73rem;font-weight:800;white-space:nowrap}
+.sp-gpill.alert{background:#fee2e2;color:#b91c1c;border:1px solid #fca5a5}
+.sp-gpill.upd{background:#ffedd5;color:#c2410c;border:1px solid #fdba74}
+.sp-gpill.ok{background:#d1fae5;color:#047857;border:1px solid #6ee7b7}
+.sp-gpill.hist{background:#e2e8f0;color:#475569}
+.sp-gmeta{font-size:.8rem;color:#475569;display:flex;flex-wrap:wrap;gap:6px 14px;margin-bottom:10px}
+.sp-gscores{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));max-width:380px;gap:8px;margin-bottom:12px}
+.sp-sbox{background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;padding:8px 12px;text-align:center}
+.sp-sbox .lbl{font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.3px}
+.sp-sbox .val{font-size:1.5rem;font-weight:900;color:#1d4ed8;line-height:1.25;margin-top:2px}
+.sp-gcard.pending .sp-sbox .val,.sp-gcard.updated .sp-sbox .val{color:#b91c1c}
+.sp-gdiff{background:#fff7ed;border:1px dashed #fb923c;color:#9a3412;border-radius:10px;padding:8px 10px;font-size:.8rem;font-weight:700;margin-bottom:10px}
+.sp-gbtn{width:100%;border:0;border-radius:12px;padding:10px 14px;background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-weight:900;font-size:.86rem;line-height:1.3;text-align:center;white-space:normal;display:inline-flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 3px 10px rgba(5,150,105,.25)}
+.sp-gbtn:hover{filter:brightness(1.04)}
+.sp-gbtn:disabled{opacity:.65;cursor:not-allowed}
+.sp-gbtn-all{border:0;border-radius:12px;padding:9px 16px;background:#dc2626;color:#fff;font-weight:900;font-size:.84rem;display:inline-flex;align-items:center;gap:7px;box-shadow:0 3px 10px rgba(220,38,38,.28)}
+.sp-gdone-bar{font-size:.8rem;font-weight:700;color:#047857;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:10px;padding:7px 11px;display:inline-flex;align-items:center;gap:6px}
+.sp-gadmin-note{background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af;border-radius:10px;padding:8px 12px;font-size:.8rem;font-weight:700;margin-bottom:10px}
+
+/* ---------- 4C) Thanh Liên hệ phụ trách Khoa siêu gọn (1 hàng trên cả điện thoại & máy tính) ---------- */
+.sp-contact-bar{margin-bottom:8px}
+.sp-ct-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px}
+@media(min-width:768px){.sp-ct-grid{gap:10px}}
+.sp-ct-card{display:flex;align-items:center;gap:7px;padding:6px 9px;border-radius:11px;text-decoration:none!important;text-align:left;width:100%;min-width:0;transition:transform .12s ease,box-shadow .12s ease;cursor:pointer;line-height:1.2}
+@media(min-width:768px){.sp-ct-card{gap:9px;padding:7px 12px}}
+.sp-ct-card:hover{transform:translateY(-1px);box-shadow:0 3px 10px rgba(15,23,42,.08)}
+.sp-ct-card.fb{background:#eff6ff;border:1px solid #bfdbfe;color:#1e3a8a}
+.sp-ct-card.zalo{background:#f0f9ff;border:1px solid #bae6fd;color:#0c4a6e}
+.sp-ct-ic{flex:none;width:26px;height:26px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;font-weight:900;color:#fff;font-size:.82rem}
+.sp-ct-ic.fb{background:#1877f2}
+.sp-ct-ic.zalo{background:#0068ff;font-size:.6rem;letter-spacing:-.2px}
+.sp-ct-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.sp-ct-txt b{font-size:.74rem;font-weight:800;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sp-ct-txt small{font-size:.66rem;font-weight:700;color:#1d4ed8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sp-ct-card.zalo .sp-ct-txt small{color:#0369a1}
+.sp-ct-full{display:none}
+.sp-ct-short{display:inline}
+.sp-ct-ext{flex:none;font-size:.68rem;color:#2563eb;opacity:.85}
+@media(min-width:768px){
+  .sp-ct-ic{width:28px;height:28px}
+  .sp-ct-txt b{font-size:.82rem}
+  .sp-ct-txt small{font-size:.73rem}
+  .sp-ct-full{display:inline}
+  .sp-ct-short{display:none}
+}
 
 /* ---------- Thanh công cụ dính ---------- */
 .v8-tb{position:sticky;top:0;z-index:25;background:rgba(241,245,249,.97);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);margin:-4px -4px 8px;padding:8px 4px 6px;border-bottom:1px solid var(--border)}
@@ -3062,11 +3155,33 @@ body.v8-off .v8-offbar{display:block}
 
   <nav class="sp-tabs">
     <button type="button" class="sp-tabbtn nav-stu-TKB active" onclick="switchStudentTab('TKB')"><i class="fas fa-calendar-alt"></i> Lịch học &amp; Thi</button>
+    <button type="button" class="sp-tabbtn nav-stu-GRADES" id="spTabGradesBtn" onclick="switchStudentTab('GRADES')"><i class="fas fa-clipboard-check"></i> Điểm quá trình <span class="sp-gbadge" id="spGradeBadgeTop" style="display:none;">0</span></button>
     <button type="button" class="sp-tabbtn nav-stu-PROGRESS" onclick="switchStudentTab('PROGRESS')"><i class="fas fa-chart-line"></i> Tiến độ các môn</button>
   </nav>
 
   <main class="sp-scroll" id="spScroll">
     <div class="sp-wrap">
+
+      <!-- LIÊN HỆ PHỤ TRÁCH KHOA (SIÊU GỌN 1 HÀNG) -->
+      <div class="sp-contact-bar" id="spContactBar">
+        <div class="sp-ct-grid">
+          <a id="spContactOtoLink" class="sp-ct-card fb" href="https://www.facebook.com/share/1EGAN4R2s1/" target="_blank" rel="noopener noreferrer" title="Liên hệ phụ trách Khoa Công nghệ Ô tô qua Fanpage">
+            <span class="sp-ct-ic fb"><i class="fab fa-facebook-f"></i></span>
+            <span class="sp-ct-txt">
+              <b><span class="sp-ct-short">Khoa CN Ô tô</span><span class="sp-ct-full">Khoa Công nghệ Ô tô</span></b>
+              <small><span class="sp-ct-short">Fanpage hỗ trợ</span><span class="sp-ct-full">Liên hệ phụ trách qua Fanpage</span></small>
+            </span>
+            <i class="fas fa-arrow-up-right-from-square sp-ct-ext"></i>
+          </a>
+          <button type="button" id="spContactKtcnBtn" class="sp-ct-card zalo" onclick="spShowKtcnZaloInfo()" title="Khoa KT-CN (Cơ khí, Điện Công nghiệp, Công nghệ thông tin): Liên hệ thầy Thiên qua Zalo">
+            <span class="sp-ct-ic zalo">Zalo</span>
+            <span class="sp-ct-txt">
+              <b><span class="sp-ct-short">KT-CN · Thầy Thiên</span><span class="sp-ct-full">Khoa KT-CN (Cơ khí, Điện Công nghiệp, Công nghệ thông tin)</span></b>
+              <small><span class="sp-ct-short">Zalo (CK·Điện·CNTT)</span><span class="sp-ct-full">Liên hệ thầy Thiên qua Zalo</span></small>
+            </span>
+          </button>
+        </div>
+      </div>
 
       <!-- TAB LỊCH HỌC -->
       <section id="stuTabTKB">
@@ -3081,7 +3196,8 @@ body.v8-off .v8-offbar{display:block}
           <div id="searchMssvArea" class="sp-search">
             <div class="sp-field">
               <i class="fas fa-id-card"></i>
-              <input type="text" id="studentSearchMssvInput" inputmode="numeric" pattern="[0-9]*" enterkeyhint="search" autocomplete="off" placeholder="Nhập MSSV của bạn" onkeydown="if(event.key==='Enter')triggerStudentSearch()">
+              <input type="text" id="studentSearchMssvInput" inputmode="numeric" pattern="[0-9]*" enterkeyhint="search" autocomplete="off" placeholder="Nhập MSSV của bạn" oninput="spToggleClearMssv()" onkeydown="if(event.key==='Enter')triggerStudentSearch()">
+              <button type="button" id="spClearMssvBtn" class="sp-clear-btn" onclick="spClearMssv()" title="Xóa MSSV để nhập mã khác" style="display:none;"><i class="fas fa-times-circle"></i></button>
             </div>
             <button type="button" class="sp-go" onclick="triggerStudentSearch()" aria-label="Tìm"><i class="fas fa-search"></i></button>
           </div>
@@ -3097,6 +3213,9 @@ body.v8-off .v8-offbar{display:block}
           <div id="spHint" class="sp-hint"></div>
           <div id="studentWelcomeMsg" class="sp-hello"><span><i class="fas fa-check-circle"></i> <b id="studentWelcomeText"></b></span></div>
         </div>
+
+        <!-- Thanh báo động chớp nháy khi có điểm quá trình chưa xác nhận -->
+        <div id="spGradeAlertBanner" class="sp-galert" style="display:none;" onclick="switchStudentTab('GRADES')"></div>
 
         <!-- Thanh chọn tuần -->
         <div class="sp-weekbar">
@@ -3132,12 +3251,30 @@ body.v8-off .v8-offbar{display:block}
         <div id="spProgressList"><div class="sp-loading"><i class="fas fa-spinner fa-spin"></i> Đang tải...</div></div>
       </section>
 
+      <!-- TAB ĐIỂM QUÁ TRÌNH (BÁO ĐỘNG CHỚP NHÁY ĐẾN KHI XÁC NHẬN) -->
+      <section id="stuTabGrades" style="display:none;">
+        <div class="sp-card" style="padding:12px;">
+          <div class="sp-search">
+            <div class="sp-field" style="height:42px;">
+              <i class="fas fa-id-card"></i>
+              <input type="text" id="spGradesQuickMssv" inputmode="numeric" pattern="[0-9]*" enterkeyhint="search" autocomplete="off" placeholder="Nhập MSSV để xem điểm quá trình..." onkeydown="if(event.key==='Enter')spSearchGradesByQuickMssv()">
+            </div>
+            <button type="button" class="sp-go" style="height:42px;width:42px;" onclick="spSearchGradesByQuickMssv()" aria-label="Xem điểm"><i class="fas fa-search"></i></button>
+          </div>
+        </div>
+        <div id="spGradesHeader"></div>
+        <div id="spGradesBody">
+          <div class="sp-empty"><i class="fas fa-id-card"></i>Nhập MSSV của bạn ở trên (hoặc ở tab Lịch học) để xem điểm Chuyên cần &amp; Giữa kỳ đã khóa.</div>
+        </div>
+      </section>
+
     </div>
   </main>
 
   <nav class="sp-bottom">
     <button type="button" class="sp-bn nav-stu-TKB active" onclick="switchStudentTab('TKB')"><i class="fas fa-calendar-alt"></i><span>Lịch học</span></button>
-    <button type="button" class="sp-bn nav-stu-PROGRESS" onclick="switchStudentTab('PROGRESS')"><i class="fas fa-chart-line"></i><span>Tiến độ môn</span></button>
+    <button type="button" class="sp-bn nav-stu-GRADES" id="spNavGradesBtn" onclick="switchStudentTab('GRADES')"><i class="fas fa-clipboard-check"></i><span>Điểm QT</span><span class="sp-gbadge-m" id="spGradeBadgeMob" style="display:none;">0</span></button>
+    <button type="button" class="sp-bn nav-stu-PROGRESS" onclick="switchStudentTab('PROGRESS')"><i class="fas fa-chart-line"></i><span>Tiến độ</span></button>
   </nav>
 </div>
 
@@ -3243,23 +3380,146 @@ function hideLoadingScreen() {
   }
 }
 
-setInterval(function() {
-  try {
-    if (document.getElementById('loadingScreen').style.display !== 'none') return; 
-    if (IS_STUDENT_MODE) {
-      if (document.getElementById('stuTabTKB').style.display !== 'none') fetchStudentTimetableWeb(true);
-      else switchStudentTab('PROGRESS', true);
-    } else if (currentUser && userRole) {
-      if (userRole === 'ADMIN' && document.getElementById('adminArea').style.display !== 'none') {
-        loadAdminDashboard(true);
-      } else if (userRole === 'ADMIN' && document.getElementById('tkbArea').style.display !== 'none') {
-        loadAdminTimetableMatrix(true);
-      } else if (userRole === 'GV' && document.getElementById('gvTimetableContainer').style.display !== 'none') {
+// =========================================================================
+// SMART STAMP SYNC: Cập nhật giao diện tức thì khi có thay đổi, 0 đọc Sheet khi đứng yên, chống sụp web!
+// =========================================================================
+window.__lastStamps = null;
+window.__adminDashDirty = false;
+window.__stsBundleStale = false;
+window.__adoptGasStamps = function(stamps) {
+  if (!stamps || typeof stamps !== 'object') return;
+  window.__lastStamps = {
+    all: stamps.all || '',
+    tkb: stamps.tkb || '',
+    stu: stamps.stu || '',
+    diem: stamps.diem || ''
+  };
+};
+
+(function() {
+  var syncInFlight = false;
+  var syncTimer = null;
+
+  function isModalOrPopupOpen() {
+    if (window.Swal && typeof Swal.isVisible === 'function' && Swal.isVisible()) return true;
+    if (document.querySelector('.modal.show')) return true;
+    return false;
+  }
+
+  function nextIntervalMs() {
+    // Admin/GV: 15 giây kiểm tra 1 lần (siêu nhẹ - chỉ đọc RAM CacheService, không đụng Sheet!)
+    // Cổng Sinh viên: 45-60 giây rải đều ngẫu nhiên để 300-500 SV không đánh sập Apps Script
+    if (typeof IS_STUDENT_MODE !== 'undefined' && IS_STUDENT_MODE) {
+      return 45000 + Math.floor(Math.random() * 15000);
+    }
+    return 15000;
+  }
+
+  function handleStampDiff(prev, cur) {
+    var tkbChanged = prev.tkb !== cur.tkb;
+    var stuChanged = prev.stu !== cur.stu;
+    var diemChanged = prev.diem !== cur.diem;
+    var allChanged = prev.all !== cur.all;
+
+    if (tkbChanged || stuChanged || diemChanged || allChanged) {
+      window.__stsBundleStale = true;
+    }
+
+    if (typeof IS_STUDENT_MODE !== 'undefined' && IS_STUDENT_MODE) {
+      // Cổng Sinh viên độc lập: thêm jitter nhỏ 0.5-2.5s tránh hàng trăm SV gọi cùng 1ms
+      var jitter = 500 + Math.floor(Math.random() * 2000);
+      setTimeout(function() {
+        try {
+          if (tkbChanged || stuChanged) {
+            var tabTkb = document.getElementById('stuTabTKB');
+            if (tabTkb && tabTkb.style.display !== 'none' && typeof fetchStudentTimetableWeb === 'function') {
+              if (typeof spForce !== 'undefined') spForce = true;
+              fetchStudentTimetableWeb(true);
+            }
+          }
+          if (diemChanged && typeof spLoadGrades === 'function') {
+            spLoadGrades(true);
+          }
+          if (allChanged) {
+            var tabProg = document.getElementById('stuTabProgress');
+            if (tabProg && tabProg.style.display !== 'none' && typeof spLoadProgress === 'function') {
+              spLoadProgress(true);
+            }
+          }
+        } catch (eStu) {}
+      }, jitter);
+      return;
+    }
+
+    if (!currentUser || !userRole) return;
+    if (userRole === 'ADMIN') {
+      var admArea = document.getElementById('adminArea');
+      var tkbArea = document.getElementById('tkbArea');
+      var stuArea = document.getElementById('stuArea');
+      if (admArea && admArea.style.display !== 'none') {
+        if (allChanged && typeof loadAdminDashboard === 'function') loadAdminDashboard(true);
+      } else if (allChanged) {
+        window.__adminDashDirty = true;
+      }
+      if (tkbArea && tkbArea.style.display !== 'none') {
+        if ((tkbChanged || stuChanged) && typeof loadAdminTimetableMatrix === 'function') loadAdminTimetableMatrix(true);
+      }
+      if (stuArea && stuArea.style.display !== 'none') {
+        if ((tkbChanged || stuChanged) && typeof fetchStudentTimetableWeb === 'function') fetchStudentTimetableWeb(true);
+        if (diemChanged && typeof spLoadGrades === 'function') spLoadGrades(true);
+      }
+    } else if (userRole === 'GV') {
+      var gvTkb = document.getElementById('gvTimetableContainer');
+      if (gvTkb && gvTkb.style.display !== 'none' && tkbChanged && typeof loadLecturerPersonalTimetable === 'function') {
         loadLecturerPersonalTimetable(true);
       }
     }
-  } catch(e){}
-}, 60000);
+  }
+
+  function runStampCheck() {
+    scheduleNext();
+    try {
+      if (document.hidden) return;
+      var ls = document.getElementById('loadingScreen');
+      if (ls && ls.style.display !== 'none') return;
+      if (isModalOrPopupOpen()) return;
+      if (!IS_STUDENT_MODE && (!currentUser || !userRole)) return;
+      if (syncInFlight) return;
+      syncInFlight = true;
+      google.script.run
+        .withSuccessHandler(function(stamps) {
+          syncInFlight = false;
+          if (!stamps || typeof stamps !== 'object') return;
+          if (!window.__lastStamps) {
+            window.__adoptGasStamps(stamps);
+            return;
+          }
+          var prev = window.__lastStamps;
+          window.__adoptGasStamps(stamps);
+          if (prev.all !== stamps.all || prev.tkb !== stamps.tkb || prev.stu !== stamps.stu || prev.diem !== stamps.diem) {
+            handleStampDiff(prev, stamps);
+          }
+        })
+        .withFailureHandler(function() { syncInFlight = false; })
+        .getDataStamps();
+    } catch (e) { syncInFlight = false; }
+  }
+
+  function scheduleNext() {
+    clearTimeout(syncTimer);
+    syncTimer = setTimeout(runStampCheck, nextIntervalMs());
+  }
+
+  // Quay lại tab trình duyệt -> kiểm tra stamp ngay (SV có rải đều nhẹ 1-3s chống nghẽn)
+  document.addEventListener('visibilitychange', function() {
+    if (document.hidden) return;
+    var delay = (typeof IS_STUDENT_MODE !== 'undefined' && IS_STUDENT_MODE) ? (1000 + Math.floor(Math.random() * 2500)) : 400;
+    clearTimeout(syncTimer);
+    syncTimer = setTimeout(runStampCheck, delay);
+  });
+
+  scheduleNext();
+})();
 
 function changeWeek(days, inputId) {
   var inputEl = document.getElementById(inputId);
@@ -11344,7 +11604,7 @@ var wb = XLSX.utils.book_new();
               <input type="text" id="stsGvSearch" class="form-control" placeholder="Gõ tên hoặc tài khoản GV để tìm nhanh..." oninput="stsFilterGvList()" onkeydown="if(event.key==='Enter'){event.preventDefault();stsPickFirstFilteredGv();}">
               <button type="button" class="btn btn-outline-secondary" onclick="stsClearGvSearch()" title="Xóa tìm kiếm"><i class="fas fa-times"></i></button>
             </div>
-            <select id="stsGvSelect" class="form-select" onchange="loadSmartTeacherOptions()"></select>
+            <select id="stsGvSelect" class="form-select" onchange="loadSmartTeacherOptions(false)"></select>
           </div>
           <div class="col-6 col-md-3">
             <label class="form-label fw-bold small">2. Tuần (Thứ 2 đầu tuần)</label>
@@ -11418,10 +11678,28 @@ var wb = XLSX.utils.book_new();
 
 <script>
 (function(){
-  var stsState = { gvList: [], assignments: [], busySlots: {}, plan: [], deleteItems: [] };
+  var stsState = {
+    bundle: null,
+    gvList: [],
+    assignments: [],
+    busySlots: {},
+    plan: [],
+    deleteItems: []
+  };
+  var stsLoadingBundle = false;
+
   function escT(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function cleanKey(s){ return String(s == null ? '' : s).replace(/\s+/g, ' ').trim().toUpperCase(); }
   function normSearchVN(s){
     return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[đĐ]/g, 'd').toLowerCase().trim();
+  }
+  function isUnassignedRoomJs(r){
+    var c = cleanKey(r);
+    return !c || c === 'CHƯA XẾP' || c === 'CHƯA XẾP PHÒNG' || c === 'CHUA XEP' || c === 'CHUA XEP PHONG';
+  }
+  function fmtVN(iso){
+    var p = String(iso || '').split('-');
+    return p.length === 3 ? (p[2] + '/' + p[1] + '/' + p[0]) : iso;
   }
 
   function getMondayIso(dateStr){
@@ -11430,7 +11708,8 @@ var wb = XLSX.utils.book_new();
     var day = d.getDay();
     var diff = d.getDate() - day + (day === 0 ? -6 : 1);
     d.setDate(diff);
-    return d.toISOString().slice(0, 10);
+    var pad = function(x){ return String(x).padStart(2, '0'); };
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
   }
 
   function addDaysIso(iso, n){
@@ -11440,10 +11719,46 @@ var wb = XLSX.utils.book_new();
     return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
   }
 
-  var stsSearchTimer = null;
+  function applySelectedGvInstant(){
+    var sel = document.getElementById('stsGvSelect');
+    var gv = sel ? sel.value : '';
+    var gvKey = cleanKey(gv);
+    var prevArea = document.getElementById('stsPreviewArea');
+    if (prevArea) prevArea.style.display = 'none';
+    stsState.plan = [];
+    stsState.deleteItems = [];
+
+    if (stsState.bundle && stsState.bundle.byGv) {
+      var entry = stsState.bundle.byGv[gvKey] || { assignments: [], busySlots: {} };
+      stsState.assignments = Array.isArray(entry.assignments) ? entry.assignments : [];
+      stsState.busySlots = entry.busySlots || {};
+      window.renderSmartTeacherGrid();
+      window.renderSmartTeacherAssignments();
+      return true;
+    }
+    return false;
+  }
+
+  function adoptBundle(bundle){
+    if (!bundle || !bundle.success) return false;
+    stsState.bundle = bundle;
+    stsState.gvList = Array.isArray(bundle.gvList) ? bundle.gvList : [];
+    window.__stsBundleStale = false;
+    if (bundle.stamps && typeof window.__adoptGasStamps === 'function') {
+      window.__adoptGasStamps(bundle.stamps);
+    }
+    var sel = document.getElementById('stsGvSelect');
+    var searchVal = (document.getElementById('stsGvSearch') || {}).value || '';
+    if (sel) {
+      window.stsRenderGvSelect(stsState.gvList, searchVal);
+    }
+    applySelectedGvInstant();
+    return true;
+  }
+
   window.stsRenderGvSelect = function(list, query){
     var sel = document.getElementById('stsGvSelect');
-    if (!sel) return;
+    if (!sel) return false;
     var q = normSearchVN(query);
     var filtered = (list || []).filter(function(g){
       if (!q) return true;
@@ -11452,7 +11767,7 @@ var wb = XLSX.utils.book_new();
     var prevVal = sel.value;
     if (!filtered.length) {
       sel.innerHTML = '<option value="">-- Không tìm thấy GV phù hợp --</option>';
-      return false;
+      return true;
     }
     sel.innerHTML = filtered.map(function(g){
       return '<option value="' + escT(g.user) + '">' + escT(g.name) + ' (' + escT(g.user) + ')</option>';
@@ -11463,79 +11778,72 @@ var wb = XLSX.utils.book_new();
     return sel.value !== prevVal;
   };
 
+  // Gõ tìm GV: lọc + đổi lịch bận & môn 0ms TỨC THÌ trên RAM (0 gọi server!)
   window.stsFilterGvList = function(){
     var inp = document.getElementById('stsGvSearch');
     var q = inp ? inp.value : '';
-    var changed = window.stsRenderGvSelect(stsState.gvList, q);
-    clearTimeout(stsSearchTimer);
-    if (changed) {
-      var sel = document.getElementById('stsGvSelect');
-      if (sel && sel.value) {
-        stsSearchTimer = setTimeout(function(){ window.loadSmartTeacherOptions(); }, 250);
-      }
-    }
+    window.stsRenderGvSelect(stsState.gvList, q);
+    if (!applySelectedGvInstant()) window.loadSmartTeacherOptions(false);
   };
 
   window.stsPickFirstFilteredGv = function(){
-    clearTimeout(stsSearchTimer);
-    var sel = document.getElementById('stsGvSelect');
-    if (sel && sel.value) window.loadSmartTeacherOptions();
+    if (!applySelectedGvInstant()) window.loadSmartTeacherOptions(false);
   };
 
   window.stsClearGvSearch = function(){
     var inp = document.getElementById('stsGvSearch');
     if (inp) inp.value = '';
-    var changed = window.stsRenderGvSelect(stsState.gvList, '');
-    if (changed) window.loadSmartTeacherOptions();
+    window.stsRenderGvSelect(stsState.gvList, '');
+    if (!applySelectedGvInstant()) window.loadSmartTeacherOptions(false);
     if (inp) inp.focus();
   };
 
   window.openSmartTeacherScheduleModal = function(){
     var wEl = document.getElementById('stsWeekInput');
     var admW = document.getElementById('adminWeekInput');
-    if (wEl) wEl.value = getMondayIso((admW && admW.value) || new Date().toISOString().slice(0, 10));
+    if (wEl) wEl.value = getMondayIso((admW && admW.value) || toLocalIsoDate(new Date()));
     var modalEl = document.getElementById('smartTeacherScheduleModal');
     if (window.bootstrap && bootstrap.Modal) bootstrap.Modal.getOrCreateInstance(modalEl).show();
-    window.loadSmartTeacherOptions();
+    if (stsState.bundle && !window.__stsBundleStale) {
+      // Đã có gói dữ liệu mới nhất trên RAM -> mở tức thì 0ms!
+      applySelectedGvInstant();
+    } else {
+      window.loadSmartTeacherOptions(true);
+    }
   };
 
   var stsLoadSeq = 0;
-  window.loadSmartTeacherOptions = function(){
-    var sel = document.getElementById('stsGvSelect');
-    var gv = sel ? sel.value : '';
-    var week = (document.getElementById('stsWeekInput') || {}).value || '';
+  window.loadSmartTeacherOptions = function(forceFetch){
+    // Nếu chỉ đổi GV trên dropdown mà bundle đã sẵn sàng & còn tươi -> 0ms tức thì!
+    if (!forceFetch && stsState.bundle && !window.__stsBundleStale) {
+      applySelectedGvInstant();
+      return;
+    }
+    if (stsLoadingBundle && !forceFetch) return;
+    stsLoadingBundle = true;
     var box = document.getElementById('stsAssignList');
     var prevArea = document.getElementById('stsPreviewArea');
     if (prevArea) prevArea.style.display = 'none';
-    if (box) box.innerHTML = '<div class="text-center text-muted py-3"><i class="fas fa-spinner fa-spin me-2"></i>Đang tải phân công &amp; lịch bận...</div>';
+    if (box) box.innerHTML = '<div class="text-center text-muted py-3"><i class="fas fa-spinner fa-spin me-2"></i>Đang nạp gói dữ liệu xếp lịch thông minh (chỉ 1 lần)...</div>';
     var seq = ++stsLoadSeq;
     google.script.run
       .withSuccessHandler(function(res){
+        stsLoadingBundle = false;
         if (seq !== stsLoadSeq) return;
         try {
-          if (!res || !res.success) {
+          if (!adoptBundle(res)) {
             if (box) box.innerHTML = '<div class="alert alert-danger py-2">' + escT((res && res.message) || 'Lỗi tải dữ liệu') + '</div>';
-            return;
           }
-          if (res.gvList && res.gvList.length) {
-            stsState.gvList = res.gvList;
-          }
-          if (sel && sel.options.length === 0) {
-            window.stsRenderGvSelect(stsState.gvList, '');
-          }
-          stsState.assignments = Array.isArray(res.assignments) ? res.assignments : [];
-          stsState.busySlots = res.busySlots || {};
-          window.renderSmartTeacherGrid();
-          window.renderSmartTeacherAssignments();
         } catch (ex) {
           if (box) box.innerHTML = '<div class="alert alert-danger py-2">Lỗi hiển thị dữ liệu: ' + escT(ex && ex.message ? ex.message : ex) + '</div>';
         }
       })
       .withFailureHandler(function(err){
+        stsLoadingBundle = false;
         if (seq !== stsLoadSeq) return;
         if (box) box.innerHTML = '<div class="alert alert-danger py-2">' + escT(err && err.message ? err.message : err) + '</div>';
       })
-      .getLecturerScheduleOptions(gv, week);
+      .getSmartTeacherBundle();
   };
 
   window.renderSmartTeacherGrid = function(){
@@ -11616,6 +11924,245 @@ var wb = XLSX.utils.book_new();
     }).join('');
   };
 
+  // Thuật toán phân tích siêu tốc chạy cục bộ (< 5ms trên RAM) dựa trên bundle đồng bộ từ server!
+  function computeLocalPreview(payload){
+    var b = stsState.bundle;
+    if (!b || !Array.isArray(b.tkbCompact)) return null;
+    var gv = payload.gv;
+    var gvC = cleanKey(gv);
+    var slots = payload.slots || [];
+    var selectedAssigns = payload.assignments || [];
+    var allowSecondPass = payload.allowSecondPass !== false;
+    var replaceOutsideSlots = payload.replaceOutsideSlots === true;
+    var weekStart = payload.weekStart || '';
+    var weekEnd = payload.weekEnd || '';
+
+    var allowedSlotSet = {};
+    slots.forEach(function(sl){
+      if (sl.ngay && sl.ca) allowedSlotSet[sl.ngay + '|' + cleanKey(sl.ca)] = true;
+    });
+
+    var attendedSet = b.attendedSet || {};
+    var assignOrigs = b.assignOrigs || {};
+    var bySlot = {};
+    var toDelete = [];
+    var keptProtected = [];
+    var deletedByMonLop = {};
+    var deletedByMon = {};
+
+    function addSlotRow(rw){
+      var sk = rw.ngay + '|' + rw.caC;
+      if (!bySlot[sk]) bySlot[sk] = [];
+      bySlot[sk].push(rw);
+    }
+
+    b.tkbCompact.forEach(function(rw){
+      if (replaceOutsideSlots && rw.gvC === gvC && rw.ngay >= weekStart && rw.ngay <= weekEnd) {
+        var sk = rw.ngay + '|' + rw.caC;
+        if (!allowedSlotSet[sk]) {
+          var isAtt = !!attendedSet[rw.ngay + '|' + rw.caC + '|' + rw.monC];
+          if (rw.isExam || isAtt) {
+            keptProtected.push({
+              ngay: rw.ngay, ngayVN: fmtVN(rw.ngay), ca: rw.ca, lop: rw.lop, mon: rw.mon,
+              reason: rw.isExam ? 'Lịch thi (giữ nguyên)' : 'Đã điểm danh (giữ nguyên)'
+            });
+            addSlotRow(rw);
+          } else {
+            toDelete.push({ ngay: rw.ngay, ngayVN: fmtVN(rw.ngay), ca: rw.ca, lop: rw.lop, mon: rw.mon, phong: rw.phong });
+            var dk = cleanKey(rw.lop) + '||' + rw.monC;
+            deletedByMonLop[dk] = (deletedByMonLop[dk] || 0) + 1;
+            deletedByMon[rw.monC] = (deletedByMon[rw.monC] || 0) + 1;
+          }
+          return;
+        }
+      }
+      addSlotRow(rw);
+    });
+
+    function checkConflict(ngay, caC, phong, origs){
+      var list = bySlot[ngay + '|' + caC] || [];
+      var out = { gv: [], room: [], students: [] };
+      var realRoom = !isUnassignedRoomJs(phong);
+      var phongC = realRoom ? cleanKey(phong) : '';
+      for (var i = 0; i < list.length; i++) {
+        var r = list[i];
+        if (r.gvC === gvC) out.gv.push(r);
+        if (realRoom && r.phong && cleanKey(r.phong) === phongC) out.room.push(r);
+        if (origs && origs.length && r.origs && r.origs.length) {
+          var ov = origs.filter(function(o){ return r.origs.indexOf(o) !== -1; });
+          if (ov.length) out.students.push({ row: r, overlap: ov });
+        }
+      }
+      return out;
+    }
+
+    var freeSlots = [];
+    var skippedBusy = [];
+    slots.forEach(function(sl){
+      var caC = cleanKey(sl.ca);
+      var phong = isUnassignedRoomJs(sl.phong) ? '' : sl.phong.trim();
+      var base = checkConflict(sl.ngay, caC, phong, []);
+      if (base.gv.length > 0) {
+        skippedBusy.push({ ngay: sl.ngay, ca: sl.ca, reason: 'GV đã có lịch: ' + base.gv[0].lop + ' - ' + base.gv[0].mon });
+      } else {
+        freeSlots.push({ ngay: sl.ngay, ca: sl.ca, caC: caC, phong: phong });
+      }
+    });
+
+    var units = [];
+    selectedAssigns.forEach(function(asg){
+      var monC = cleanKey(asg.mon);
+      var freedTotal = 0;
+      // Tính số buổi được giải phóng nếu bật xóa lịch ngoài khung rảnh
+      var grpList = asg.groups || [asg.lop];
+      var freedSet = {};
+      toDelete.forEach(function(td){
+        if (cleanKey(td.mon) !== monC) return;
+        var tdL = cleanKey(td.lop);
+        if (tdL === cleanKey(asg.lop) || grpList.some(function(g){ return cleanKey(g) === tdL; })) {
+          freedSet[td.ngay + '|' + cleanKey(td.ca)] = 1;
+        }
+      });
+      freedTotal = Object.keys(freedSet).length;
+
+      var remB = (asg.remaining || 0) + freedTotal;
+      if (remB <= 0) return;
+      var sharedQuota = { remaining: remB };
+
+      if (asg.allowMergeGroups && grpList.length > 1) {
+        var uOrig = [];
+        grpList.forEach(function(gn){
+          (assignOrigs[cleanKey(gn) + '||' + monC] || [cleanKey(gn)]).forEach(function(o){
+            if (uOrig.indexOf(o) === -1) uOrig.push(o);
+          });
+        });
+        units.push({
+          id: asg.lop + '|' + asg.mon + '|MERGED',
+          lop: asg.lop, mon: asg.mon, groupLabel: grpList.join(', '),
+          originals: uOrig, usedCount: Math.max(0, (asg.usedBuoi || 0) - freedTotal),
+          sharedQuota: sharedQuota, isMerged: true
+        });
+      } else {
+        grpList.forEach(function(gn, gi){
+          var origUsed = (asg.groupObjs && asg.groupObjs[gi]) ? asg.groupObjs[gi].used : 0;
+          var gFreed = deletedByMonLop[cleanKey(gn) + '||' + monC] || 0;
+          units.push({
+            id: gn + '|' + asg.mon,
+            lop: gn, mon: asg.mon, groupLabel: gn,
+            originals: assignOrigs[cleanKey(gn) + '||' + monC] || [cleanKey(gn)],
+            usedCount: Math.max(0, origUsed - gFreed),
+            sharedQuota: sharedQuota, isMerged: false
+          });
+        });
+      }
+    });
+
+    units.forEach(function(u){
+      var avail = 0;
+      freeSlots.forEach(function(sl){
+        var c = checkConflict(sl.ngay, sl.caC, sl.phong, u.originals);
+        if (c.gv.length === 0 && c.students.length === 0) avail++;
+      });
+      u.scarcity = avail;
+    });
+
+    var plan = [], unplaced = [], dayGroupCount = {}, dayMonCount = {};
+    freeSlots.forEach(function(sl){
+      var chosen = null, bestScore = -1e9, failReasons = [];
+      for (var pass = 1; pass <= (allowSecondPass ? 2 : 1); pass++) {
+        for (var i = 0; i < units.length; i++) {
+          var u = units[i];
+          if (u.sharedQuota.remaining <= 0) continue;
+          var dgKey = sl.ngay + '|' + u.id;
+          var alreadyToday = dayGroupCount[dgKey] || 0;
+          if (pass === 1 && alreadyToday > 0) continue;
+          var c = checkConflict(sl.ngay, sl.caC, sl.phong, u.originals);
+          if (c.gv.length > 0 || c.room.length > 0 || c.students.length > 0) {
+            if (pass === 1 && c.students.length > 0) {
+              failReasons.push(u.groupLabel + ' (' + u.mon + '): trùng SV ' + c.students[0].overlap.join(', '));
+            }
+            continue;
+          }
+          var score = (50 - Math.min(u.scarcity, 50)) * 20 +
+                      (alreadyToday === 0 ? 500 : -400 * alreadyToday) +
+                      (30 - Math.min(u.usedCount, 30)) * 15;
+          var dmKey = sl.ngay + '|' + cleanKey(u.mon);
+          if ((dayMonCount[dmKey] || 0) > 0 && alreadyToday === 0) score += 120;
+          if (score > bestScore) { bestScore = score; chosen = u; }
+        }
+        if (chosen) break;
+      }
+
+      if (chosen) {
+        chosen.sharedQuota.remaining--;
+        chosen.usedCount++;
+        dayGroupCount[sl.ngay + '|' + chosen.id] = (dayGroupCount[sl.ngay + '|' + chosen.id] || 0) + 1;
+        dayMonCount[sl.ngay + '|' + cleanKey(chosen.mon)] = (dayMonCount[sl.ngay + '|' + cleanKey(chosen.mon)] || 0) + 1;
+        addSlotRow({ ngay: sl.ngay, ca: sl.ca, caC: sl.caC, gvC: gvC, lop: chosen.lop, mon: chosen.mon, monC: cleanKey(chosen.mon), phong: sl.phong, isExam: false, origs: chosen.originals });
+        plan.push({ ngay: sl.ngay, ngayVN: fmtVN(sl.ngay), ca: sl.ca, phong: sl.phong, lop: chosen.lop, mon: chosen.mon, isMerged: chosen.isMerged });
+      } else {
+        unplaced.push({ ngay: sl.ngay, ngayVN: fmtVN(sl.ngay), ca: sl.ca, reason: failReasons.length ? failReasons.slice(0, 2).join('; ') : 'Các môn đã hết quỹ buổi hoặc không còn nhóm phù hợp' });
+      }
+    });
+
+    return {
+      success: true,
+      plan: plan,
+      toDelete: toDelete,
+      keptProtected: keptProtected,
+      unplaced: unplaced,
+      skippedBusy: skippedBusy,
+      stats: {
+        totalRequested: slots.length,
+        scheduledCount: plan.length,
+        deleteCount: toDelete.length,
+        protectedCount: keptProtected.length,
+        busyCount: skippedBusy.length,
+        unplacedCount: unplaced.length
+      }
+    };
+  }
+
+  function renderPreviewResult(res){
+    stsState.plan = res.plan || [];
+    stsState.deleteItems = res.toDelete || [];
+    var keptProt = res.keptProtected || [];
+    var st = res.stats || {};
+    document.getElementById('stsPreviewStats').innerHTML =
+      '<div class="alert alert-success py-2 mb-0 small fw-semibold">' +
+      'Đã xếp được <b>' + (st.scheduledCount || 0) + '/' + (st.totalRequested || 0) + '</b> buổi rảnh' +
+      (st.deleteCount ? (' — <span class="text-danger">Sẽ xóa <b>' + st.deleteCount + '</b> buổi ngoài khung rảnh</span>') : '') +
+      (st.unplacedCount ? (' — <span class="text-warning text-dark">' + st.unplacedCount + ' buổi chưa xếp được</span>') : '') +
+      '</div>';
+    var delHtml = '';
+    if (stsState.deleteItems.length > 0) {
+      delHtml += '<div class="alert alert-danger py-2 small mb-1"><b><i class="fas fa-trash-alt me-1"></i>Các buổi ngoài khung rảnh sẽ tự động xóa (' + stsState.deleteItems.length + ' buổi):</b><br>' +
+        stsState.deleteItems.map(function(d){ return '• ' + escT(d.ngayVN + ' · ' + d.ca + ' — ' + d.lop + ' — ' + d.mon); }).join('<br>') + '</div>';
+    }
+    if (keptProt.length > 0) {
+      delHtml += '<div class="alert alert-info py-2 small mb-0"><b><i class="fas fa-shield-alt me-1"></i>Giữ nguyên (' + keptProt.length + ' buổi được bảo vệ):</b><br>' +
+        keptProt.map(function(k){ return '• ' + escT(k.ngayVN + ' · ' + k.ca + ' — ' + k.mon + ' (' + k.reason + ')'); }).join('<br>') + '</div>';
+    }
+    document.getElementById('stsDeleteBox').innerHTML = delHtml;
+    document.getElementById('stsPreviewBody').innerHTML = stsState.plan.map(function(p, i){
+      return '<tr>' +
+        '<td><b>' + escT(p.ngayVN) + '</b></td>' +
+        '<td>' + escT(p.ca) + '</td>' +
+        '<td><span class="badge bg-primary-subtle text-primary">' + escT(p.lop) + '</span></td>' +
+        '<td>' + escT(p.mon) + '</td>' +
+        '<td><input type="text" class="form-control form-control-sm sts-plan-room" data-idx="' + i + '" value="' + escT(p.phong || '') + '" placeholder="Chưa xếp"></td>' +
+        '<td><button type="button" class="btn btn-sm btn-outline-danger py-0" onclick="stsRemovePlanItem(' + i + ')"><i class="fas fa-times"></i></button></td>' +
+      '</tr>';
+    }).join('');
+
+    var unp = res.unplaced || [];
+    document.getElementById('stsUnplacedBox').innerHTML = unp.length
+      ? '<div class="alert alert-warning py-2 small mb-0"><b>Các ca chưa xếp được:</b><br>' + unp.map(function(u){ return '• ' + escT(u.ngayVN + ' ' + u.ca + ': ' + u.reason); }).join('<br>') + '</div>'
+      : '';
+    document.getElementById('stsPreviewArea').style.display = 'block';
+    document.getElementById('btnSaveSmartTeacher').disabled = (stsState.plan.length === 0 && stsState.deleteItems.length === 0);
+  }
+
   window.runSmartTeacherPreview = function(){
     var gv = (document.getElementById('stsGvSelect') || {}).value;
     var defRoom = (document.getElementById('stsDefaultRoom') || {}).value.trim();
@@ -11642,54 +12189,33 @@ var wb = XLSX.utils.book_new();
       chosenAssigns.push({
         lop: a.lop,
         mon: a.mon,
+        remaining: a.remaining,
+        usedBuoi: a.usedBuoi,
+        groupObjs: a.groups,
         groups: a.groups.map(function(g){ return g.name; }),
         allowMergeGroups: !!(mEl && mEl.checked)
       });
     });
     if (!chosenAssigns.length) return Swal.fire('Lưu ý', 'Vui lòng chọn ít nhất 1 môn học!', 'warning');
 
+    // Chạy phân tích TỨC THÌ trên RAM (< 5ms) nếu bundle đã có!
+    var localRes = computeLocalPreview({
+      gv: gv, slots: slots, assignments: chosenAssigns,
+      allowSecondPass: allow2, replaceOutsideSlots: replaceOutside,
+      weekStart: weekMon, weekEnd: weekSun
+    });
+    if (localRes && localRes.success) {
+      renderPreviewResult(localRes);
+      return;
+    }
+
+    // Fallback server (đã tối ưu O(1)) nếu bundle chưa sẵn
     if (typeof showLoading === 'function') showLoading('Đang chạy thuật toán xếp lịch thông minh...');
     google.script.run
       .withSuccessHandler(function(res){
         if (typeof Swal !== 'undefined') Swal.close();
         if (!res || !res.success) return Swal.fire('Lỗi', (res && res.message) || 'Không phân tích được', 'error');
-        stsState.plan = res.plan || [];
-        stsState.deleteItems = res.toDelete || [];
-        var keptProt = res.keptProtected || [];
-        var st = res.stats || {};
-        document.getElementById('stsPreviewStats').innerHTML =
-          '<div class="alert alert-success py-2 mb-0 small fw-semibold">' +
-          'Đã xếp được <b>' + (st.scheduledCount || 0) + '/' + (st.totalRequested || 0) + '</b> buổi rảnh' +
-          (st.deleteCount ? (' — <span class="text-danger">Sẽ xóa <b>' + st.deleteCount + '</b> buổi ngoài khung rảnh</span>') : '') +
-          (st.unplacedCount ? (' — <span class="text-warning text-dark">' + st.unplacedCount + ' buổi chưa xếp được</span>') : '') +
-          '</div>';
-        var delHtml = '';
-        if (stsState.deleteItems.length > 0) {
-          delHtml += '<div class="alert alert-danger py-2 small mb-1"><b><i class="fas fa-trash-alt me-1"></i>Các buổi ngoài khung rảnh sẽ tự động xóa (' + stsState.deleteItems.length + ' buổi):</b><br>' +
-            stsState.deleteItems.map(function(d){ return '• ' + escT(d.ngayVN + ' · ' + d.ca + ' — ' + d.lop + ' — ' + d.mon); }).join('<br>') + '</div>';
-        }
-        if (keptProt.length > 0) {
-          delHtml += '<div class="alert alert-info py-2 small mb-0"><b><i class="fas fa-shield-alt me-1"></i>Giữ nguyên (' + keptProt.length + ' buổi được bảo vệ):</b><br>' +
-            keptProt.map(function(k){ return '• ' + escT(k.ngayVN + ' · ' + k.ca + ' — ' + k.mon + ' (' + k.reason + ')'); }).join('<br>') + '</div>';
-        }
-        document.getElementById('stsDeleteBox').innerHTML = delHtml;
-        document.getElementById('stsPreviewBody').innerHTML = stsState.plan.map(function(p, i){
-          return '<tr>' +
-            '<td><b>' + escT(p.ngayVN) + '</b></td>' +
-            '<td>' + escT(p.ca) + '</td>' +
-            '<td><span class="badge bg-primary-subtle text-primary">' + escT(p.lop) + '</span></td>' +
-            '<td>' + escT(p.mon) + '</td>' +
-            '<td><input type="text" class="form-control form-control-sm sts-plan-room" data-idx="' + i + '" value="' + escT(p.phong || '') + '" placeholder="Chưa xếp"></td>' +
-            '<td><button type="button" class="btn btn-sm btn-outline-danger py-0" onclick="stsRemovePlanItem(' + i + ')"><i class="fas fa-times"></i></button></td>' +
-          '</tr>';
-        }).join('');
-
-        var unp = res.unplaced || [];
-        document.getElementById('stsUnplacedBox').innerHTML = unp.length
-          ? '<div class="alert alert-warning py-2 small mb-0"><b>Các ca chưa xếp được:</b><br>' + unp.map(function(u){ return '• ' + escT(u.ngayVN + ' ' + u.ca + ': ' + u.reason); }).join('<br>') + '</div>'
-          : '';
-        document.getElementById('stsPreviewArea').style.display = 'block';
-        document.getElementById('btnSaveSmartTeacher').disabled = (stsState.plan.length === 0 && stsState.deleteItems.length === 0);
+        renderPreviewResult(res);
       })
       .withFailureHandler(function(err){
         if (typeof Swal !== 'undefined') Swal.close();
@@ -11713,7 +12239,7 @@ var wb = XLSX.utils.book_new();
       var rInp = document.querySelector('.sts-plan-room[data-idx="' + i + '"]');
       return { ngay: p.ngay, ca: p.ca, lop: p.lop, mon: p.mon, phong: rInp ? rInp.value.trim() : (p.phong || '') };
     });
-    if (typeof showLoading === 'function') showLoading('Đang dọn lịch cũ & lưu lịch thông minh...');
+    if (typeof showLoading === 'function') showLoading('Đang kiểm tra trùng 3 tầng & lưu lịch...');
     google.script.run
       .withSuccessHandler(function(res){
         if (typeof Swal !== 'undefined') Swal.close();
@@ -11722,9 +12248,27 @@ var wb = XLSX.utils.book_new();
             ? '<div class="alert alert-warning text-start small mt-2 mb-0"><b>Các buổi bị bỏ qua do trùng:</b><br>• ' + res.errors.map(escT).join('<br>• ') + '</div>'
             : '';
           Swal.fire({ title: 'Thành công!', html: '<div class="text-start small">' + escT(res.message) + '</div>' + errNote, icon: 'success' });
-          if (typeof loadAdminTimetableMatrix === 'function') loadAdminTimetableMatrix(true);
-          if (typeof loadAdminDashboard === 'function') loadAdminDashboard(true);
-          window.loadSmartTeacherOptions();
+
+          // Cập nhật giao diện modal TỨC THÌ từ bundle trả về trong cùng response (0 request thêm!)
+          if (res.bundle && res.bundle.success) {
+            adoptBundle(res.bundle);
+          } else {
+            window.__stsBundleStale = true;
+            window.loadSmartTeacherOptions(true);
+          }
+
+          // Chỉ làm mới đúng bảng TKB nếu đang mở tab TKB, KHÔNG bắn 3 request nặng chồng nhau!
+          var tkbArea = document.getElementById('tkbArea');
+          if (tkbArea && tkbArea.style.display !== 'none' && typeof loadAdminTimetableMatrix === 'function') {
+            loadAdminTimetableMatrix(true);
+          }
+          // Đánh dấu Admin Dashboard cần làm mới khi quay lại tab Quản trị Khoa
+          var admArea = document.getElementById('adminArea');
+          if (admArea && admArea.style.display !== 'none' && typeof loadAdminDashboard === 'function') {
+            loadAdminDashboard(true);
+          } else {
+            window.__adminDashDirty = true;
+          }
           document.getElementById('stsPreviewArea').style.display = 'none';
         } else {
           Swal.fire('Không lưu được', (res && res.message) || 'Lỗi không xác định', 'error');
@@ -11736,6 +12280,502 @@ var wb = XLSX.utils.book_new();
       })
       .saveSmartTeacherSchedule({ gv: gv, items: items, deleteItems: stsState.deleteItems });
   };
+})();
+</script>
+<script>
+/* ===== CỔNG SINH VIÊN v5: SỬA LỖI ĐỔI MSSV TRONG ADMIN + TAB BÁO ĐỘNG ĐIỂM QUÁ TRÌNH ===== */
+(function(){
+  var spGradeData = null;
+  var spGradeReqId = 0;
+  var spCurrentMssv = '';
+
+  function isAdminStuEmbed(){
+    return (typeof IS_STUDENT_MODE !== 'undefined' && !IS_STUDENT_MODE) &&
+           (typeof userRole !== 'undefined' && userRole === 'ADMIN');
+  }
+
+  function getActiveMssv(){
+    var inp = document.getElementById('studentSearchMssvInput');
+    return inp ? (inp.value || '').replace(/\s+/g, '').trim() : '';
+  }
+
+  window.spShowKtcnZaloInfo = function(){
+    if (typeof Swal !== 'undefined') {
+      Swal.fire({
+        title: 'Liên hệ Khoa Kỹ thuật - Công nghệ',
+        html: '<div class="text-start small" style="line-height:1.6;">' +
+              '<p class="mb-2">Sinh viên các ngành <b>Cơ khí, Điện Công nghiệp, Công nghệ thông tin</b> khi cần hỗ trợ về lịch học, điểm số, học lại / học ghép vui lòng:</p>' +
+              '<div class="p-3 rounded-3 text-center fw-bold" style="background:#e0f2fe;border:1.5px solid #38bdf8;color:#0369a1;font-size:.95rem;">' +
+              '<i class="fas fa-comments me-1"></i> Liên hệ trực tiếp thầy Thiên qua Zalo' +
+              '</div></div>',
+        icon: 'info',
+        confirmButtonText: 'Đã hiểu',
+        confirmButtonColor: '#0068ff'
+      });
+    } else {
+      alert('Khoa KT-CN (Cơ khí, Điện Công nghiệp, Công nghệ thông tin): Vui lòng liên hệ thầy Thiên qua Zalo.');
+    }
+  };
+
+  window.spToggleClearMssv = function(){
+    var inp = document.getElementById('studentSearchMssvInput');
+    var btn = document.getElementById('spClearMssvBtn');
+    if (btn) btn.style.display = (inp && inp.value.trim().length > 0) ? 'inline-block' : 'none';
+  };
+
+  window.spClearMssv = function(){
+    var inp = document.getElementById('studentSearchMssvInput');
+    if (inp) { inp.value = ''; inp.focus(); }
+    window.spToggleClearMssv();
+    spCurrentMssv = '';
+    spGradeData = null;
+    if (typeof spBusy !== 'undefined') spBusy = '';
+    if (typeof spData !== 'undefined') spData = null;
+    if (typeof spReqId !== 'undefined') spReqId++;
+    spGradeReqId++;
+    var w = document.getElementById('studentWelcomeMsg');
+    if (w) w.style.display = 'none';
+    var card = document.querySelector('#stuTabTKB .sp-card');
+    if (card) card.classList.remove('col');
+    window.spUpdateGradeAlertUi(0, 0, '');
+    if (typeof spHint === 'function') spHint('');
+    if (typeof spPlaceholder === 'function') spPlaceholder();
+    var gBody = document.getElementById('spGradesBody');
+    if (gBody) gBody.innerHTML = spGradesEmptyPromptHtml();
+  };
+
+  function spGradesEmptyPromptHtml(){
+    return '<div class="sp-empty"><i class="fas fa-id-card"></i>Nhập MSSV của bạn ở trên (hoặc ở tab Lịch học) để xem điểm Chuyên cần &amp; Giữa kỳ đã khóa.</div>';
+  }
+
+  // Cập nhật trạng thái chớp nháy trên Tab + Bottom Nav + Banner đầu trang Lịch học
+  window.spUpdateGradeAlertUi = function(pendingCount, updatedCount, studentName){
+    var n = parseInt(pendingCount, 10) || 0;
+    var u = parseInt(updatedCount, 10) || 0;
+    var hasAlert = n > 0;
+
+    document.querySelectorAll('.nav-stu-GRADES').forEach(function(el){
+      el.classList.toggle('has-alert', hasAlert);
+    });
+    var bTop = document.getElementById('spGradeBadgeTop');
+    var bMob = document.getElementById('spGradeBadgeMob');
+    if (bTop) { bTop.textContent = String(n); bTop.style.display = hasAlert ? 'inline-flex' : 'none'; }
+    if (bMob) { bMob.textContent = String(n); bMob.style.display = hasAlert ? 'inline-flex' : 'none'; }
+
+    var banner = document.getElementById('spGradeAlertBanner');
+    if (banner) {
+      if (hasAlert && spMode() === 'MSSV') {
+        var titleTxt = u > 0
+          ? ('ĐIỂM QUÁ TRÌNH VỪA ĐƯỢC CẬP NHẬT LẠI (' + n + ' môn chờ xác nhận)!')
+          : ('BẠN CÓ ' + n + ' MÔN ĐÃ KHÓA ĐIỂM QUÁ TRÌNH CHƯA XÁC NHẬN!');
+        var subTxt = isAdminStuEmbed()
+          ? ('Sinh viên ' + (studentName || spCurrentMssv) + ' chưa bấm xác nhận đã xem điểm CC & GK.')
+          : 'Bấm vào đây để xem điểm Chuyên cần & Giữa kỳ và bấm xác nhận đã xem để tắt thông báo.';
+        banner.innerHTML =
+          '<div class="sp-galert-l">' +
+            '<i class="fas fa-bell"></i>' +
+            '<div><div class="sp-galert-t">' + escapeHtml(titleTxt) + '</div>' +
+            '<div class="sp-galert-s">' + escapeHtml(subTxt) + '</div></div>' +
+          '</div>' +
+          '<button type="button" class="sp-galert-btn">Xem ngay <i class="fas fa-arrow-right ms-1"></i></button>';
+        banner.style.display = 'flex';
+      } else {
+        banner.style.display = 'none';
+      }
+    }
+  };
+
+  window.spApplyGradeSummary = function(mssv, summary){
+    if (!summary) return;
+    if (mssv && spCurrentMssv && mssv.toUpperCase() !== spCurrentMssv.toUpperCase()) return;
+    var name = (spGradeData && spGradeData.studentName) || '';
+    window.spUpdateGradeAlertUi(summary.pendingCount || 0, summary.updatedCount || 0, name);
+    // Nếu điểm đã thay đổi stamp trên server -> đánh dấu spGradeData cũ để lần bấm vào tab sẽ tải bản mới
+    if (spGradeData && summary.diemStamp && spGradeData.diemStamp !== summary.diemStamp) {
+      spGradeData = null;
+    }
+  };
+
+  function spRenderGrades(res){
+    var body = document.getElementById('spGradesBody');
+    var hdr = document.getElementById('spGradesHeader');
+    if (!body) return;
+    if (!res || !res.success) {
+      window.spUpdateGradeAlertUi(0, 0, '');
+      if (hdr) hdr.innerHTML = '';
+      body.innerHTML = '<div class="sp-empty"><i class="fas fa-circle-exclamation"></i>' + escapeHtml((res && res.message) || 'Không tìm thấy dữ liệu sinh viên.') + '</div>';
+      return;
+    }
+
+    spGradeData = res;
+    window.spUpdateGradeAlertUi(res.pendingCount || 0, res.updatedCount || 0, res.studentName);
+
+    var items = res.items || [];
+    var completed = res.completedItems || [];
+    var pendingItems = items.filter(function(x){ return x.needsAlert; });
+
+    if (hdr) {
+      var btnAll = pendingItems.length >= 2
+        ? '<button type="button" class="sp-gbtn-all" id="spConfirmAllGradesBtn" onclick="spConfirmProcessGrades(null)"><i class="fas fa-check-double"></i> Xác nhận đã xem tất cả (' + pendingItems.length + ' môn)</button>'
+        : '';
+      hdr.innerHTML =
+        '<div class="sp-ghead">' +
+          '<div><div class="sp-ptitle mb-0"><i class="fas fa-clipboard-check" style="color:#dc2626"></i> Điểm quá trình (CC &amp; GK)</div>' +
+          '<div class="small text-muted fw-bold">' + escapeHtml(res.studentName || '') + ' · MSSV: ' + escapeHtml(res.mssv || '') + '</div></div>' +
+          btnAll +
+        '</div>' +
+        (isAdminStuEmbed()
+          ? '<div class="sp-gadmin-note"><i class="fas fa-user-shield me-1"></i>Bạn đang kiểm tra bằng tài khoản <b>Admin</b>. Trạng thái bên dưới là trạng thái xác nhận thật của sinh viên trên hệ thống.</div>'
+          : '');
+    }
+
+    var h = '';
+    if (items.length === 0) {
+      h += '<div class="sp-empty mb-3"><i class="fas fa-check-circle" style="color:#10b981;opacity:1"></i>Hiện chưa có môn đang học nào mới khóa điểm quá trình (CC &amp; GK).</div>';
+    } else {
+      items.forEach(function(it){
+        var cardCls = it.isUpdatedAfterConfirm ? 'updated' : (it.needsAlert ? 'pending' : 'done');
+        var pill = it.isUpdatedAfterConfirm
+          ? '<span class="sp-gpill upd"><i class="fas fa-rotate"></i> Điểm vừa được cập nhật lại!</span>'
+          : (it.needsAlert
+              ? '<span class="sp-gpill alert"><i class="fas fa-bell"></i> Mới khóa · Chưa xác nhận</span>'
+              : '<span class="sp-gpill ok"><i class="fas fa-check-circle"></i> Đã xác nhận</span>');
+        var diffHtml = it.isUpdatedAfterConfirm
+          ? '<div class="sp-gdiff"><i class="fas fa-exclamation-triangle me-1"></i>Giảng viên vừa điều chỉnh lại điểm của bạn! Trước đó bạn đã xem: <b>CC ' + escapeHtml(it.prevCc || '—') + ' · GK ' + escapeHtml(it.prevGk || '—') + '</b> → Nay đổi thành: <b>CC ' + escapeHtml(it.cc || '—') + ' · GK ' + escapeHtml(it.gk || '—') + '</b>. Vui lòng kiểm tra và xác nhận lại!</div>'
+          : '';
+        var cleanMon = (typeof spClean === 'function' ? spClean(it.mon) : it.mon) || it.mon;
+        var actionHtml = it.needsAlert
+          ? '<button type="button" class="sp-gbtn" data-mon="' + escapeHtml(it.mon) + '" onclick="spConfirmProcessGrades([this.getAttribute(\'data-mon\')], this)"><i class="fas fa-check-circle"></i> Tôi đã xem &amp; xác nhận điểm quá trình môn này</button>'
+          : '<div class="sp-gdone-bar"><i class="fas fa-check-double"></i> Đã xác nhận xem điểm lúc ' + escapeHtml(it.confirmedAt || '') + '</div>';
+
+        h += '<div class="sp-gcard ' + cardCls + '">' +
+          '<div class="sp-gcard-top"><div class="sp-gcard-mon">' + escapeHtml(cleanMon) + '</div>' + pill + '</div>' +
+          '<div class="sp-gmeta">' +
+            (it.gvName ? '<span><i class="fas fa-user-tie me-1"></i>GV: <b>' + escapeHtml(it.gvName) + '</b></span>' : '') +
+            (it.lop ? '<span><i class="fas fa-users me-1"></i>' + escapeHtml(it.lop) + '</span>' : '') +
+            (it.hocKy ? '<span><i class="fas fa-bookmark me-1"></i>' + escapeHtml(it.hocKy) + '</span>' : '') +
+          '</div>' +
+          diffHtml +
+          '<div class="sp-gscores">' +
+            '<div class="sp-sbox"><div class="lbl">Chuyên cần (CC)</div><div class="val">' + escapeHtml(it.cc !== '' ? it.cc : '—') + '</div></div>' +
+            '<div class="sp-sbox"><div class="lbl">Giữa kỳ (GK)</div><div class="val">' + escapeHtml(it.gk !== '' ? it.gk : '—') + '</div></div>' +
+          '</div>' +
+          actionHtml +
+        '</div>';
+      });
+    }
+
+    if (completed.length > 0) {
+      h += '<details class="mt-3"><summary class="fw-bold text-secondary small" style="cursor:pointer;padding:8px 4px;"><i class="fas fa-archive me-1"></i>Xem lại điểm quá trình các môn đã hoàn thành / chốt sổ (' + completed.length + ' môn)</summary><div class="mt-2">';
+      completed.forEach(function(c){
+        var cm = (typeof spClean === 'function' ? spClean(c.mon) : c.mon) || c.mon;
+        h += '<div class="sp-gcard hist">' +
+          '<div class="sp-gcard-top"><div class="sp-gcard-mon">' + escapeHtml(cm) + '</div><span class="sp-gpill hist"><i class="fas fa-lock"></i> Đã chốt sổ</span></div>' +
+          '<div class="sp-gmeta">' + (c.gvName ? '<span>GV: <b>' + escapeHtml(c.gvName) + '</b></span>' : '') + (c.hocKy ? '<span>' + escapeHtml(c.hocKy) + '</span>' : '') + '</div>' +
+          '<div class="sp-gscores mb-0">' +
+            '<div class="sp-sbox"><div class="lbl">Chuyên cần (CC)</div><div class="val" style="color:#475569">' + escapeHtml(c.cc !== '' ? c.cc : '—') + '</div></div>' +
+            '<div class="sp-sbox"><div class="lbl">Giữa kỳ (GK)</div><div class="val" style="color:#475569">' + escapeHtml(c.gk !== '' ? c.gk : '—') + '</div></div>' +
+          '</div>' +
+        '</div>';
+      });
+      h += '</div></details>';
+    }
+
+    body.innerHTML = h;
+  }
+
+  window.spLoadGrades = function(isSilent){
+    var mssv = getActiveMssv() || spCurrentMssv;
+    var quickInp = document.getElementById('spGradesQuickMssv');
+    if (quickInp && mssv && quickInp.value !== mssv) quickInp.value = mssv;
+    var body = document.getElementById('spGradesBody');
+    if (!mssv) {
+      window.spUpdateGradeAlertUi(0, 0, '');
+      if (body && !isSilent) body.innerHTML = spGradesEmptyPromptHtml();
+      return;
+    }
+    spCurrentMssv = mssv;
+    var myReq = ++spGradeReqId;
+    if (!isSilent && body) {
+      body.innerHTML = '<div class="sp-loading"><i class="fas fa-spinner fa-spin"></i> Đang tải điểm quá trình của MSSV ' + escapeHtml(mssv) + '...</div>';
+    }
+    google.script.run
+      .withSuccessHandler(function(res){
+        if (myReq !== spGradeReqId) return;
+        spRenderGrades(res);
+      })
+      .withFailureHandler(function(){
+        if (myReq !== spGradeReqId || isSilent) return;
+        if (body) body.innerHTML = '<div class="sp-empty"><i class="fas fa-wifi"></i>Không tải được điểm quá trình. Vui lòng thử lại.</div>';
+      })
+      .getStudentProcessGrades(mssv);
+  };
+
+  window.spSearchGradesByQuickMssv = function(){
+    var q = document.getElementById('spGradesQuickMssv');
+    var v = q ? (q.value || '').replace(/\s+/g, '').trim() : '';
+    if (!v) return;
+    var mainInp = document.getElementById('studentSearchMssvInput');
+    if (mainInp) { mainInp.value = v; window.spToggleClearMssv(); }
+    var rMssv = document.getElementById('modeMssv');
+    if (rMssv && !rMssv.checked) { rMssv.checked = true; if (typeof toggleSearchMode === 'function') toggleSearchMode(); }
+    spCurrentMssv = v;
+    spGradeData = null;
+    window.spLoadGrades(false);
+    // Tải ngầm luôn lịch để khi chuyển sang tab Lịch học đã sẵn sàng
+    if (typeof fetchStudentTimetableWeb === 'function') fetchStudentTimetableWeb(true);
+  };
+
+  window.spConfirmProcessGrades = function(monsArr, btnEl){
+    var mssv = getActiveMssv() || spCurrentMssv;
+    if (!mssv) return;
+
+    function doConfirm(){
+      var allBtn = document.getElementById('spConfirmAllGradesBtn');
+      if (btnEl) { btnEl.disabled = true; btnEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang lưu xác nhận...'; }
+      if (allBtn) allBtn.disabled = true;
+      google.script.run
+        .withSuccessHandler(function(res){
+          if (res && res.success) {
+            if (res.data) spRenderGrades(res.data);
+            else window.spLoadGrades(false);
+            if (typeof Swal !== 'undefined') {
+              Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: res.message || 'Đã xác nhận xem điểm!', showConfirmButton: false, timer: 2500 });
+            }
+          } else {
+            if (btnEl) { btnEl.disabled = false; btnEl.innerHTML = '<i class="fas fa-check-circle"></i> Tôi đã xem &amp; xác nhận điểm quá trình môn này'; }
+            if (allBtn) allBtn.disabled = false;
+            if (typeof Swal !== 'undefined') Swal.fire('Lưu ý', (res && res.message) || 'Không thể lưu xác nhận', 'warning');
+          }
+        })
+        .withFailureHandler(function(err){
+          if (btnEl) { btnEl.disabled = false; btnEl.innerHTML = '<i class="fas fa-check-circle"></i> Tôi đã xem &amp; xác nhận điểm quá trình môn này'; }
+          if (allBtn) allBtn.disabled = false;
+          if (typeof Swal !== 'undefined') Swal.fire('Lỗi', (err && err.message) || 'Lỗi kết nối', 'error');
+        })
+        .confirmStudentProcessGrade(mssv, monsArr || []);
+    }
+
+    if (isAdminStuEmbed() && typeof Swal !== 'undefined') {
+      Swal.fire({
+        title: 'Xác nhận hộ sinh viên?',
+        text: 'Bạn đang xem từ tài khoản Admin. Bạn có chắc muốn đánh dấu "Đã xem điểm quá trình" cho MSSV ' + mssv + ' không?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Đồng ý xác nhận',
+        cancelButtonText: 'Hủy'
+      }).then(function(r){ if (r.isConfirmed) doConfirm(); });
+      return;
+    }
+    doConfirm();
+  };
+
+  // --- GHI ĐÈ switchStudentTab hỗ trợ cả 3 tab: TKB, GRADES, PROGRESS ---
+  window.switchStudentTab = function(tab, isSilent){
+    if (!isSilent) {
+      document.querySelectorAll('.nav-stu-TKB, .nav-stu-GRADES, .nav-stu-PROGRESS').forEach(function(el){ el.classList.remove('active'); });
+      document.querySelectorAll('.nav-stu-' + tab).forEach(function(el){ el.classList.add('active'); });
+      var sc = document.getElementById('spScroll'); if (sc) sc.scrollTop = 0;
+    }
+    var tTkb = document.getElementById('stuTabTKB');
+    var tGrd = document.getElementById('stuTabGrades');
+    var tPrg = document.getElementById('stuTabProgress');
+    if (tTkb) tTkb.style.display = (tab === 'TKB') ? 'block' : 'none';
+    if (tGrd) tGrd.style.display = (tab === 'GRADES') ? 'block' : 'none';
+    if (tPrg) tPrg.style.display = (tab === 'PROGRESS') ? 'block' : 'none';
+    if (tab === 'PROGRESS' && typeof spLoadProgress === 'function') spLoadProgress(isSilent);
+    if (tab === 'GRADES') window.spLoadGrades(isSilent);
+  };
+
+  // --- SỬA TRIỆT ĐỂ LỖI ĐỔI MSSV (ĐẶC BIỆT TRONG TAB CỔNG SINH VIÊN CỦA ADMIN) ---
+  var _origToggleSearchMode = window.toggleSearchMode;
+  window.toggleSearchMode = function(){
+    if (typeof _origToggleSearchMode === 'function') _origToggleSearchMode();
+    if (typeof spBusy !== 'undefined') spBusy = '';
+    if (spMode() !== 'MSSV') {
+      window.spUpdateGradeAlertUi(0, 0, '');
+    } else if (spGradeData && spGradeData.mssv && spGradeData.mssv === getActiveMssv().toUpperCase()) {
+      window.spUpdateGradeAlertUi(spGradeData.pendingCount, spGradeData.updatedCount, spGradeData.studentName);
+    }
+  };
+
+  window.spCollapse = function(txt){
+    // Trong Admin (#stuArea): TUYỆT ĐỐI KHÔNG ẩn khung nhập MSSV để Admin tra liên tiếp nhiều SV mượt 100%
+    if (isAdminStuEmbed()) return;
+    var c = (typeof spCard === 'function') ? spCard() : document.querySelector('#stuTabTKB .sp-card');
+    if (!c) return;
+    var wt = document.getElementById('spWhoTxt');
+    if (wt) wt.textContent = txt;
+    c.classList.add('col');
+  };
+
+  window.spExpand = function(){
+    var c = (typeof spCard === 'function') ? spCard() : document.querySelector('#stuTabTKB .sp-card');
+    if (c) c.classList.remove('col');
+    // Reset sạch trạng thái bận để nhập MSSV mới chạy ngay lập tức
+    if (typeof spBusy !== 'undefined') spBusy = '';
+    if (typeof spWantCollapse !== 'undefined') spWantCollapse = false;
+    var el = document.getElementById(spMode() === 'MSSV' ? 'studentSearchMssvInput' : 'studentSearchLopInput');
+    if (el) {
+      el.focus();
+      if (typeof el.select === 'function') try { el.select(); } catch (e) {}
+    }
+    window.spToggleClearMssv();
+  };
+
+  window.triggerStudentSearch = function(){
+    var m = spMode();
+    if (typeof spHint === 'function') spHint('');
+    if (typeof spBusy !== 'undefined') spBusy = '';
+    if (typeof spWantCollapse !== 'undefined') spWantCollapse = !isAdminStuEmbed();
+    if (m === 'MSSV') {
+      var v = getActiveMssv();
+      window.spToggleClearMssv();
+      if (!v) { if (typeof spHint === 'function') spHint('Vui lòng nhập MSSV của bạn.'); return; }
+      // Chỉ lưu localStorage student_mssv khi đang ở Cổng Sinh viên độc lập (Admin tra nhiều SV không lưu dính 1 người)
+      if (typeof IS_STUDENT_MODE !== 'undefined' && IS_STUDENT_MODE) {
+        try { localStorage.setItem('student_mssv', v); } catch (e) {}
+      }
+      if (v.toUpperCase() !== spCurrentMssv.toUpperCase()) {
+        spCurrentMssv = v;
+        spGradeData = null;
+        if (typeof spData !== 'undefined') spData = null;
+        window.spUpdateGradeAlertUi(0, 0, '');
+      }
+      var inp = document.getElementById('studentSearchMssvInput');
+      if (inp && (typeof IS_STUDENT_MODE !== 'undefined' && IS_STUDENT_MODE)) inp.blur();
+    } else {
+      var l = (document.getElementById('studentSearchLopInput') || {}).value || '';
+      if (!l) { if (typeof spHint === 'function') spHint('Vui lòng chọn lớp.'); return; }
+      if (typeof IS_STUDENT_MODE !== 'undefined' && IS_STUDENT_MODE) {
+        try { localStorage.setItem('student_lop', l); } catch (e) {}
+      }
+      if (typeof spData !== 'undefined') spData = null;
+      window.spUpdateGradeAlertUi(0, 0, '');
+    }
+    if (typeof fetchStudentTimetableWeb === 'function') fetchStudentTimetableWeb(false);
+  };
+
+  // Gắn id (MSSV/Lớp) & studentName vào chữ ký renderStudentTkb -> đổi sang SV cùng lớp vẫn vẽ lại 100%!
+  window.renderStudentTkb = function(res, week){
+    if (res && res.isLocked) {
+      if (typeof spWantCollapse !== 'undefined') spWantCollapse = false;
+      document.getElementById('spResult').innerHTML = '<div class="sp-lock"><i class="fas fa-lock"></i> Lịch tuần này đang được Khoa điều chỉnh.<br><span style="font-weight:600">Vui lòng quay lại sau.</span></div>';
+      return;
+    }
+    var m = spMode();
+    var idNow = (m === 'MSSV') ? getActiveMssv() : ((document.getElementById('studentSearchLopInput') || {}).value || '');
+    if (typeof spWantCollapse !== 'undefined' && spWantCollapse) {
+      var t = (document.getElementById('studentWelcomeText').textContent || '').replace(/^Xin chào:\s*/, '');
+      if (m === 'MSSV') t = t + ' · ' + idNow;
+      else t = t.replace(/^Đang xem lịch chung của lớp:\s*/, 'Lớp ');
+      window.spCollapse(t);
+      spWantCollapse = false;
+    }
+    var list = (res.timetable || []).map(function(it){ var o = {}; for (var k in it) o[k] = it[k]; o.ngayIso = spNormIso(it.ngayIso); return o; });
+    var mon = spMonday(week);
+    var sig = m + '|' + idNow + '|' + (res.studentName || '') + '|' + mon + '|' + JSON.stringify(list);
+    if (spData && spData.sig === sig && spData.id === idNow && document.getElementById('spMobile')) return;
+    spData = { id: idNow, list: list, week: mon, lopMode: (m === 'LOP'), sig: sig };
+    spDraw();
+  };
+
+  // Ghi đè fetchStudentTimetableWeb: không kẹt spBusy, Admin luôn lấy dữ liệu tươi khi đổi MSSV, nhận luôn processGrades!
+  window.fetchStudentTimetableWeb = function(isSilent){
+    spUpdateWeekLabel();
+    var m = spMode(), week = document.getElementById('studentWeekInput').value;
+    var id = (m === 'MSSV') ? getActiveMssv() : ((document.getElementById('studentSearchLopInput') || {}).value || '');
+    window.spToggleClearMssv();
+    if (!id) {
+      if (!isSilent && typeof spHint === 'function') spHint(m === 'MSSV' ? 'Vui lòng nhập MSSV rồi bấm tìm.' : 'Vui lòng chọn lớp rồi bấm tìm.');
+      return;
+    }
+    if (m === 'MSSV') spCurrentMssv = id;
+
+    var key = 'tkb|' + m + '|' + id + '|' + week;
+    var c = (typeof spCG === 'function') ? spCG(key) : null;
+    var age = c ? Date.now() - c.t : 1e12;
+    var force = (typeof spForce !== 'undefined') ? spForce : false;
+    if (typeof spForce !== 'undefined') spForce = false;
+
+    if (isSilent) {
+      if (document.hidden || spBusy === key) return;
+      // Chỉ chặn poll quá sát nếu không phải force (Smart Stamp đã chủ động gọi khi stamp đổi)
+    }
+    // Khi người dùng tự bấm Tìm (!isSilent): LUÔN cho chạy mới, không để spBusy cũ chặn!
+    var myReq = ++spReqId;
+    var box = document.getElementById('spResult');
+    var useLocalCacheHit = (!isAdminStuEmbed() && c && !force && age < SP_TTL.tkb);
+
+    if (!isSilent) {
+      if (useLocalCacheHit) {
+        spApplyTkb(m, id, c.v, week, c.t, false);
+        if (m === 'MSSV') {
+          if (c.v && c.v.processGrades) window.spApplyGradeSummary(id, c.v.processGrades);
+          else window.spLoadGrades(true);
+        }
+        return;
+      }
+      box.innerHTML = spLoadingHtml('Đang tải lịch tuần ' + spDM(week) + ' – ' + spDMY(spAdd(week, 6)) + '...');
+    }
+
+    spBusy = key;
+    spRun(function(s, f){
+      var r = google.script.run.withSuccessHandler(s).withFailureHandler(f);
+      if (m === 'MSSV') r.getPersonalizedTimetable(id, week);
+      else r.getWeeklyTimetable(week, id, '', true, 'STUDENT');
+    }, function(res){
+      if (spBusy === key) spBusy = '';
+      if (myReq !== spReqId) return;
+      if (!res || res.error) {
+        if (!isSilent) {
+          if (typeof spWantCollapse !== 'undefined') spWantCollapse = false;
+          spApplyTkb(m, id, res, week, Date.now(), false);
+          if (m === 'MSSV') window.spUpdateGradeAlertUi(0, 0, '');
+        }
+        return;
+      }
+      if (!res.isLocked && !isAdminStuEmbed() && typeof spCS === 'function') spCS(key, res);
+      spApplyTkb(m, id, res, week, Date.now(), false);
+      if (m === 'MSSV' && res.processGrades) {
+        window.spApplyGradeSummary(id, res.processGrades);
+      }
+    }, function(){
+      if (spBusy === key) spBusy = '';
+      if (myReq !== spReqId || isSilent) return;
+      if (c && !isAdminStuEmbed()) spApplyTkb(m, id, c.v, week, c.t, true);
+      else box.innerHTML = '<div class="sp-empty"><i class="fas fa-wifi"></i>Không tải được lịch. Kiểm tra mạng rồi bấm Làm mới.<br><button type="button" class="sp-go" style="width:auto;padding:0 18px;margin-top:10px" onclick="spForceRefresh()">↻ Thử lại</button></div>';
+    });
+  };
+
+  // Cập nhật nút Làm mới (spForceRefresh) để hỗ trợ cả 3 tab
+  window.spForceRefresh = function(){
+    if (Date.now() - spLastForce < 3000) return;
+    spLastForce = Date.now(); spForce = true;
+    var gTab = document.getElementById('stuTabGrades');
+    var pTab = document.getElementById('stuTabProgress');
+    if (gTab && gTab.style.display !== 'none') window.spLoadGrades(false);
+    else if (pTab && pTab.style.display !== 'none') spLoadProgress(false);
+    else window.fetchStudentTimetableWeb(false);
+  };
+
+  // Khi Admin quay lại tab Quản trị Khoa mà có thay đổi ngầm từ lúc xếp lịch -> tự cập nhật 1 lần sạch sẽ
+  var _prevSw5 = window.switchTab;
+  if (typeof _prevSw5 === 'function') {
+    window.switchTab = function(t){
+      var res = _prevSw5.apply(this, arguments);
+      if (t === 'ADMIN' && window.__adminDashDirty && typeof loadAdminDashboard === 'function') {
+        window.__adminDashDirty = false;
+        loadAdminDashboard(true);
+      }
+      if (t === 'STU') {
+        var c = document.querySelector('#stuTabTKB .sp-card');
+        if (c) c.classList.remove('col');
+        window.spToggleClearMssv();
+      }
+      return res;
+    };
+  }
 })();
 </script>
 </body>
