@@ -10770,16 +10770,32 @@ var wb = XLSX.utils.book_new();
 
           <!-- TAB 2: CẬP NHẬT DS KỲ MỚI -->
           <div class="tab-pane fade" id="tabNewSemester">
-            <div class="alert alert-warning small py-2 mb-2">
-              <b>An toàn tuyệt đối:</b> Hệ thống sẽ chốt mới các môn chưa chụp, nâng cấp tại chỗ bản chụp <code>DS_MON</code> cũ (không ghi đè danh sách SV cũ), bảo toàn trạng thái học phí lớp ghép và sao lưu toàn bộ <code>SINH_VIEN</code> cũ vào <code>LICH_SU_SINH_VIEN</code> trước khi nạp danh sách kỳ mới.
+            <div class="alert alert-success small py-2 mb-2">
+              <b><i class="fas fa-shield-alt me-1"></i>An toàn theo phạm vi Lớp (Mặc định):</b> Dán danh sách lớp nào hệ thống <b>CHỈ cập nhật đúng các lớp đó</b> (cập nhật nhóm kỳ mới, thêm SV mới, loại SV nghỉ học trong lớp đó) và <b>GIỮ NGUYÊN 100% các lớp khác</b> trong <code>SINH_VIEN</code>. Mọi môn cũ trong <code>DS_MON</code> được chốt bảo toàn và bản cũ được sao lưu 100% vào <code>LICH_SU_SINH_VIEN</code> để khôi phục 1 chạm.
             </div>
-            <textarea id="newSemPaste" class="form-control mb-2" rows="5" placeholder="Dán danh sách sinh viên KỲ MỚI từ Excel (MSSV | Họ lót | Tên | Ngày sinh | Lớp | Nhóm)... Để trống nếu chỉ muốn lưu trữ & dọn sheet cũ."></textarea>
+            <div class="border rounded p-2 mb-2 bg-light">
+              <div class="small fw-bold mb-1">Chọn phạm vi cập nhật sheet <code>SINH_VIEN</code>:</div>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="newSemScopeMode" id="newSemScopeByClass" value="BY_CLASS" checked onchange="previewNewSemScope()">
+                <label class="form-check-label small fw-semibold text-success" for="newSemScopeByClass">
+                  🛡️ Chỉ cập nhật các lớp có trong danh sách dán vào (Giữ nguyên 100% mọi lớp khác — Khuyên dùng)
+                </label>
+              </div>
+              <div class="form-check mt-1">
+                <input class="form-check-input" type="radio" name="newSemScopeMode" id="newSemScopeReplaceAll" value="REPLACE_ALL" onchange="previewNewSemScope()">
+                <label class="form-check-label small fw-semibold text-danger" for="newSemScopeReplaceAll">
+                  ⚠️ Xóa trắng TOÀN BỘ sheet SINH_VIEN (tất cả mọi lớp) và nạp lại từ đầu (Chỉ dùng cuối năm học)
+                </label>
+              </div>
+            </div>
+            <textarea id="newSemPaste" class="form-control mb-2" rows="5" oninput="previewNewSemScope()" placeholder="Dán danh sách sinh viên KỲ MỚI từ Excel (6 cột: MSSV | Họ lót | Tên | Ngày sinh | Lớp | Nhóm)..."></textarea>
+            <div id="newSemScopePreview" class="mb-2"></div>
             <div class="form-check mb-3">
               <input class="form-check-input" type="checkbox" id="chkPreserveTuition" checked>
               <label class="form-check-label fw-semibold small" for="chkPreserveTuition">Giữ lại trạng thái Học phí &amp; Ghi chú cũ nếu trùng MSSV</label>
             </div>
             <div class="text-end">
-              <button type="button" class="btn btn-danger fw-bold" onclick="executeArchiveAndNewSemester()"><i class="fas fa-shield-alt me-1"></i>Chốt DS cũ &amp; Cập nhật Kỳ mới</button>
+              <button type="button" id="btnExecNewSem" class="btn btn-success fw-bold" onclick="executeArchiveAndNewSemester()"><i class="fas fa-shield-alt me-1"></i>Chốt môn cũ &amp; Cập nhật Kỳ mới theo Lớp</button>
             </div>
           </div>
 
@@ -11107,41 +11123,142 @@ var wb = XLSX.utils.book_new();
       .previewSmartStudentImport(rows);
   };
 
+  function getNewSemScopeMode(){
+    var rAll = document.getElementById('newSemScopeReplaceAll');
+    return (rAll && rAll.checked) ? 'REPLACE_ALL' : 'BY_CLASS';
+  }
+
+  function summarizeNewSemClasses(rows){
+    var map = {}, order = [], seenMssv = {};
+    var validCount = 0;
+    (rows || []).forEach(function(r){
+      var m = String(r.mssv || '').trim().toUpperCase();
+      var lop = String(r.lop || '').trim();
+      var lopK = lop.toUpperCase();
+      if (!m || !lopK || seenMssv[m]) return;
+      seenMssv[m] = true;
+      validCount++;
+      if (!map[lopK]) { map[lopK] = { name: lop, count: 0 }; order.push(lopK); }
+      map[lopK].count++;
+    });
+    return { validCount: validCount, classes: order.map(function(k){ return map[k]; }) };
+  }
+
+  window.previewNewSemScope = function(){
+    var mode = getNewSemScopeMode();
+    var btn = document.getElementById('btnExecNewSem');
+    if (btn) {
+      if (mode === 'REPLACE_ALL') {
+        btn.className = 'btn btn-danger fw-bold';
+        btn.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i>Xóa trắng toàn bộ &amp; Nạp lại mọi lớp';
+      } else {
+        btn.className = 'btn btn-success fw-bold';
+        btn.innerHTML = '<i class="fas fa-shield-alt me-1"></i>Chốt môn cũ &amp; Cập nhật Kỳ mới theo Lớp';
+      }
+    }
+    var box = document.getElementById('newSemScopePreview');
+    if (!box) return;
+    var rows = parseExcelRows((document.getElementById('newSemPaste') || {}).value);
+    if (!rows.length) {
+      box.innerHTML = mode === 'REPLACE_ALL'
+        ? '<div class="alert alert-danger py-2 small mb-0">⚠️ Ô dán đang trống — chế độ <b>Xóa trắng toàn bộ</b> sẽ lưu trữ bản cũ rồi xóa sạch toàn bộ sheet <code>SINH_VIEN</code>.</div>'
+        : '';
+      return;
+    }
+    var info = summarizeNewSemClasses(rows);
+    var badges = info.classes.map(function(c){
+      return '<span class="badge bg-primary-subtle text-primary border me-1">' + escS(c.name) + ' (' + c.count + ' SV)</span>';
+    }).join('');
+    if (mode === 'BY_CLASS') {
+      box.innerHTML = '<div class="alert alert-info py-2 small mb-0">' +
+        '<b>📋 Phát hiện ' + info.validCount + ' SV thuộc ' + info.classes.length + ' lớp:</b> ' + badges +
+        '<div class="text-success fw-semibold mt-1"><i class="fas fa-check-circle me-1"></i>Chỉ cập nhật đúng ' + info.classes.length + ' lớp trên — GIỮ NGUYÊN 100% tất cả các lớp khác trong <code>SINH_VIEN</code>!</div>' +
+      '</div>';
+    } else {
+      box.innerHTML = '<div class="alert alert-danger py-2 small mb-0">' +
+        '<b>⚠️ CẢNH BÁO XÓA TOÀN BỘ:</b> Chế độ này sẽ <b>XÓA HẾT tất cả các lớp khác</b> trong <code>SINH_VIEN</code> và chỉ giữ lại ' + info.validCount + ' SV của ' + info.classes.length + ' lớp: ' + badges +
+      '</div>';
+    }
+  };
+
   window.executeArchiveAndNewSemester = function(){
+    var mode = getNewSemScopeMode();
     var rows = parseExcelRows((document.getElementById('newSemPaste') || {}).value);
     var preserve = !!(document.getElementById('chkPreserveTuition') && document.getElementById('chkPreserveTuition').checked);
-    Swal.fire({
-      title: 'Xác nhận cập nhật DS Kỳ mới?',
-      html: rows.length
-        ? 'Hệ thống sẽ sao lưu toàn bộ danh sách cũ vào <b>LICH_SU_SINH_VIEN</b>, chốt &amp; bảo toàn nguyên vẹn <b>DS_MON</b> và nạp <b>' + rows.length + ' sinh viên kỳ mới</b>.'
-        : 'Bạn đang để trống ô dán Excel. Hệ thống sẽ chỉ sao lưu, chốt <b>DS_MON</b> &amp; dọn sạch sheet <b>SINH_VIEN</b> cũ.',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#dc2626',
-      confirmButtonText: 'Thực hiện ngay',
-      cancelButtonText: 'Hủy'
-    }).then(function(r){
-      if (!r.isConfirmed) return;
-      if (typeof showLoading === 'function') showLoading('Đang sao lưu & cập nhật kỳ mới...');
-      google.script.run
-        .withSuccessHandler(function(res){
-          closeSwalLoading();
-          if (res && res.success) {
-            Swal.fire({ title: 'Hoàn tất!', html: res.message, icon: 'success' });
-            var nEl = document.getElementById('newSemPaste');
-            if (nEl) nEl.value = '';
-            if (typeof loadAdminDashboard === 'function') loadAdminDashboard(true);
-          } else {
-            Swal.fire('Lỗi', (res && res.message) || 'Không thực hiện được', 'error');
+    var info = summarizeNewSemClasses(rows);
+
+    if (mode === 'BY_CLASS') {
+      if (!info.validCount || !info.classes.length) {
+        return Swal.fire('Lưu ý', 'Vui lòng dán danh sách sinh viên có đủ cột MSSV và Lớp vào ô trên trước khi cập nhật!', 'warning');
+      }
+      var clsText = info.classes.map(function(c){ return '<b>' + escS(c.name) + '</b> (' + c.count + ' SV)'; }).join(', ');
+      Swal.fire({
+        title: 'Xác nhận cập nhật kỳ mới theo Lớp?',
+        html: '<div class="text-start small">' +
+          '• <b>Phạm vi cập nhật (' + info.classes.length + ' lớp — ' + info.validCount + ' SV):</b> ' + clsText + '<br>' +
+          '• <span class="text-success fw-bold">🛡️ Các lớp khác trong SINH_VIEN: GIỮ NGUYÊN 100% (không bị xóa)!</span><br>' +
+          '• Mọi môn cũ trong <b>DS_MON</b> được chốt bảo toàn &amp; toàn bộ danh sách cũ được sao lưu vào <b>LICH_SU_SINH_VIEN</b> để hoàn tác 1 chạm.' +
+        '</div>',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#198754',
+        confirmButtonText: 'Cập nhật ngay',
+        cancelButtonText: 'Hủy'
+      }).then(function(r){
+        if (!r.isConfirmed) return;
+        runArchiveAndNewSemRpc(rows, preserve, 'BY_CLASS');
+      });
+    } else {
+      Swal.fire({
+        title: '⚠️ XÓA TRẮNG TOÀN BỘ MỌI LỚP?',
+        html: '<div class="text-start small text-danger">' +
+          '<b>Cảnh báo nghiêm trọng:</b> Chế độ này sẽ <b>XÓA SẠCH tất cả các lớp khác</b> khỏi sheet <b>SINH_VIEN</b> ' +
+          (info.validCount ? ('và chỉ giữ lại <b>' + info.validCount + ' SV</b> bạn vừa dán.') : '(làm trống hoàn toàn sheet SINH_VIEN).') +
+          '<br><br><span class="text-dark">Nếu bạn chỉ muốn cập nhật 1 vài lớp, hãy bấm Hủy và chọn chế độ <b>"Chỉ cập nhật các lớp có trong danh sách dán vào"</b>!</span>' +
+          '<br><br><span class="text-dark">Gõ <code>XOA TAT CA</code> để xác nhận xóa toàn bộ:</span>' +
+        '</div>',
+        input: 'text',
+        inputPlaceholder: 'Nhập XOA TAT CA',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc2626',
+        confirmButtonText: 'Xóa toàn bộ & Nạp mới',
+        cancelButtonText: 'Hủy',
+        preConfirm: function(val){
+          if (String(val || '').trim().toUpperCase() !== 'XOA TAT CA') {
+            Swal.showValidationMessage('Vui lòng gõ chính xác "XOA TAT CA" để xác nhận!');
+            return false;
           }
-        })
-        .withFailureHandler(function(err){
-          closeSwalLoading();
-          Swal.fire('Lỗi', (err && err.message) || 'Lỗi kết nối', 'error');
-        })
-        .archiveAndClearStudentSheet(rows, preserve);
-    });
+          return true;
+        }
+      }).then(function(r){
+        if (!r.isConfirmed) return;
+        runArchiveAndNewSemRpc(rows, preserve, 'REPLACE_ALL');
+      });
+    }
   };
+
+  function runArchiveAndNewSemRpc(rows, preserve, scopeMode){
+    if (typeof showLoading === 'function') showLoading(scopeMode === 'BY_CLASS' ? 'Đang chốt môn cũ & cập nhật theo lớp...' : 'Đang sao lưu & làm mới toàn bộ...');
+    google.script.run
+      .withSuccessHandler(function(res){
+        closeSwalLoading();
+        if (res && res.success) {
+          Swal.fire({ title: 'Hoàn tất!', html: '<div class="text-start small" style="max-height:55vh;overflow-y:auto;">' + res.message + '</div>', icon: 'success' });
+          var nEl = document.getElementById('newSemPaste');
+          if (nEl) nEl.value = '';
+          window.previewNewSemScope();
+          if (typeof loadAdminDashboard === 'function') loadAdminDashboard(true);
+        } else {
+          Swal.fire('Lỗi', (res && res.message) || 'Không thực hiện được', 'error');
+        }
+      })
+      .withFailureHandler(function(err){
+        closeSwalLoading();
+        Swal.fire('Lỗi', (err && err.message) || 'Lỗi kết nối', 'error');
+      })
+      .archiveAndClearStudentSheet(rows, preserve, scopeMode);
+  }
 
   window.loadStudentChangeHistoryWeb = function(){
     var box = document.getElementById('svHistoryBox');
