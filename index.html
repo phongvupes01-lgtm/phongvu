@@ -1717,6 +1717,124 @@ a.tp-d:hover{filter:brightness(.95)}
   .sp-ct-short{display:none}
 }
 
+/* ---------- 4D) Báo động Lịch Chưa Điền Phòng Học trên Ma trận TKB Admin ---------- */
+@keyframes tkbRoomPulseCell {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.48); border-color: #ef4444; }
+  50% { box-shadow: 0 0 0 5px rgba(245, 158, 11, 0.16); border-color: #f59e0b; }
+}
+@keyframes tkbRoomBannerPulse {
+  0%, 100% { background: linear-gradient(135deg, #dc2626, #ea580c); box-shadow: 0 3px 12px rgba(220, 38, 38, 0.32); }
+  50% { background: linear-gradient(135deg, #b91c1c, #d97706); box-shadow: 0 5px 18px rgba(234, 88, 12, 0.46); }
+}
+@keyframes tkbRoomBtnBlink {
+  0%, 100% { background: #dc2626; color: #fff; border-color: #b91c1c; transform: scale(1); }
+  50% { background: #fef2f2; color: #b91c1c; border-color: #ef4444; transform: scale(1.03); }
+}
+#adminMatrixTableHtml .matrix-cell.missing-room-cell {
+  background: linear-gradient(180deg, #fffbeb 0%, #fef2f2 100%) !important;
+  border: 1.5px solid #ef4444 !important;
+  border-left: 5px solid #dc2626 !important;
+  animation: tkbRoomPulseCell 1.35s infinite ease-in-out;
+}
+#adminMatrixTableHtml .matrix-cell.exam-cell.missing-room-cell {
+  background: linear-gradient(180deg, #fee2e2 0%, #fffbeb 100%) !important;
+  border-left-color: #b91c1c !important;
+}
+#mobileAdminTimetable .timeline-card.missing-room-mobile-card {
+  background: linear-gradient(180deg, #fffbeb 0%, #fef2f2 100%) !important;
+  border: 1.5px solid #ef4444 !important;
+  border-left: 5px solid #dc2626 !important;
+  animation: tkbRoomPulseCell 1.35s infinite ease-in-out;
+}
+.badge-missing-room {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #dc2626;
+  color: #ffffff !important;
+  font-weight: 800;
+  font-size: 0.68rem;
+  padding: 2px 7px;
+  border-radius: 999px;
+  cursor: pointer;
+  animation: tkbRoomBtnBlink 1.15s infinite ease-in-out;
+  border: 1px solid #b91c1c;
+  white-space: nowrap;
+}
+.badge-missing-room:hover { filter: brightness(1.06); }
+#btnMissingRoomsAlert.has-room-alert {
+  animation: tkbRoomBtnBlink 1.15s infinite ease-in-out !important;
+  font-weight: 800 !important;
+}
+.tkb-missing-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 10px 14px;
+  margin: 10px 12px 4px;
+  border-radius: 12px;
+  color: #ffffff;
+  border: 1.5px solid #fca5a5;
+  animation: tkbRoomBannerPulse 1.35s infinite ease-in-out;
+}
+.tkb-missing-banner .tmb-left { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; }
+.tkb-missing-banner .tmb-left i { font-size: 1.25rem; flex: none; }
+.tkb-missing-banner .tmb-title { font-weight: 900; font-size: 0.88rem; line-height: 1.3; }
+.tkb-missing-banner .tmb-sub { font-size: 0.76rem; opacity: 0.94; font-weight: 600; margin-top: 2px; }
+.tkb-missing-banner .tmb-actions { display: flex; flex-wrap: wrap; gap: 6px; flex: none; }
+.tkb-missing-banner .tmb-btn {
+  border: 0; border-radius: 9px; padding: 6px 12px; font-weight: 800; font-size: 0.78rem;
+  cursor: pointer; display: inline-flex; align-items: center; gap: 5px;
+}
+.tkb-missing-banner .tmb-btn-main { background: #ffffff; color: #b91c1c; box-shadow: 0 2px 6px rgba(0,0,0,0.16); }
+.tkb-missing-banner .tmb-btn-sub { background: rgba(255,255,255,0.2); color: #ffffff; border: 1px solid rgba(255,255,255,0.45); }
+.tkb-missing-banner .tmb-btn-sub.active { background: #fef08a; color: #854d0e; border-color: #fde047; }
+#adminMatrixTableHtml.tkb-only-missing .matrix-cell:not(.missing-room-cell) { opacity: 0.22; filter: grayscale(0.75); }
+.sts-plan-room.is-empty-room { border: 1.5px solid #ef4444 !important; background-color: #fff5f5 !important; }
+.sts-room-warn-tag { display: inline-block; font-size: 0.68rem; font-weight: 800; color: #dc2626; margin-top: 2px; }
+
+/* ---------- 4E) Xin Phép Vắng & Hỗ Trợ Học Lại/Ghép (Mobile-first gọn đẹp) ---------- */
+.sp-lv-bar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-top:8px;padding-top:7px;border-top:1px dashed #e2e8f0}
+.sp-lv-btn{display:inline-flex;align-items:center;gap:5px;border:1px solid #cbd5e1;background:#f8fafc;color:#1e40af;border-radius:8px;padding:4px 10px;font-size:.75rem;font-weight:700;cursor:pointer;transition:.15s;line-height:1.25}
+.sp-lv-btn:hover{background:#eff6ff;border-color:#93c5fd}
+.sp-lv-btn.pending{background:#fffbeb;border-color:#fcd34d;color:#92400e}
+.sp-lv-btn.approved{background:#ecfdf5;border-color:#6ee7b7;color:#065f46}
+.sp-lv-btn.rejected{background:#fef2f2;border-color:#fca5a5;color:#991b1b}
+.sp-item .sp-lv-bar{margin-top:6px;padding-top:5px}
+.sp-item .sp-lv-btn{font-size:.7rem;padding:3px 7px}
+.sp-retake-box{background:linear-gradient(135deg,#eff6ff 0%,#f0fdf4 100%);border:1.5px solid #bfdbfe;border-radius:14px;padding:12px 14px;margin-bottom:12px}
+.sp-retake-hd{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.sp-retake-hd h4{margin:0;font-size:.9rem;font-weight:800;color:#1e3a8a;display:flex;align-items:center;gap:6px}
+.sp-retake-steps{margin:8px 0 10px;padding-left:18px;font-size:.8rem;color:#334155;line-height:1.5}
+.sp-retake-steps li{margin-bottom:3px}
+.sp-retake-acts{display:flex;flex-wrap:wrap;gap:8px}
+.sp-retake-acts button{border:0;border-radius:9px;padding:7px 12px;font-size:.78rem;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.sp-retake-acts .btn-pr{background:#2563eb;color:#fff;box-shadow:0 2px 6px rgba(37,99,235,.22)}
+.sp-retake-acts .btn-wd{background:#ffffff;color:#1d4ed8;border:1.5px solid #93c5fd}
+.sp-pcard-retake{margin-top:8px;width:100%;border:1px dashed #2563eb;background:#eff6ff;color:#1d4ed8;border-radius:8px;padding:6px 10px;font-size:.76rem;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.sp-pcard-retake:hover{background:#dbeafe}
+.lv-preview-box{border:1.5px dashed #94a3b8;border-radius:12px;padding:10px;text-align:center;background:#f8fafc}
+.lv-preview-box img{max-width:100%;max-height:240px;border-radius:8px;border:1px solid #cbd5e1;object-fit:contain}
+.atd-lv-pill{display:inline-flex;align-items:center;gap:4px;font-size:.73rem;font-weight:800;padding:3px 9px;border-radius:999px;cursor:pointer;margin-top:4px;border:1.5px solid transparent;transition:all .15s}
+.atd-lv-pill:hover{transform:translateY(-1px);filter:brightness(.96)}
+.atd-lv-pill.pending{background:#fef3c7;color:#92400e;border-color:#f59e0b;box-shadow:0 0 0 2px rgba(245,158,11,.22)}
+.atd-lv-pill.approved{background:#d1fae5;color:#065f46;border-color:#10b981}
+.atd-lv-pill.rejected{background:#fee2e2;color:#991b1b;border-color:#ef4444}
+.atd-lv-pill.attended{background:#e0f2fe;color:#075985;border-color:#38bdf8}
+tr.atd-row.atd-has-lv-pending{background:#fffbeb !important;box-shadow:inset 4px 0 0 #f59e0b}
+.atd-lv-banner{background:linear-gradient(135deg,#fffbeb,#fef3c7);border:1.5px solid #f59e0b;border-radius:12px;padding:11px 14px;margin-bottom:12px;box-shadow:0 2px 8px rgba(245,158,11,.14)}
+.atd-lv-banner-hd{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;font-weight:800;font-size:.86rem;color:#92400e}
+.atd-lv-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.atd-lv-chip{display:inline-flex;align-items:center;gap:5px;border:1.5px solid #f59e0b;background:#fff;color:#92400e;border-radius:999px;padding:4px 10px;font-size:.77rem;font-weight:700;cursor:pointer}
+.atd-lv-chip.approved{border-color:#10b981;color:#065f46;background:#ecfdf5}
+.atd-lv-chip.rejected{border-color:#ef4444;color:#991b1b;background:#fef2f2}
+.atd-lv-chip.attended{border-color:#0284c7;color:#075985;background:#f0f9ff}
+.atd-lv-hint{font-size:.76rem;color:#78350f;margin-top:7px}
+@keyframes lvBlinkTop{0%,100%{box-shadow:0 0 0 0 rgba(245,158,11,.55)}50%{box-shadow:0 0 0 5px rgba(245,158,11,0)}}
+#btnStaffLeaveRequests.has-pending{animation:lvBlinkTop 1.4s infinite ease-in-out}
+
 /* ---------- Thanh công cụ dính ---------- */
 .v8-tb{position:sticky;top:0;z-index:25;background:rgba(241,245,249,.97);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);margin:-4px -4px 8px;padding:8px 4px 6px;border-bottom:1px solid var(--border)}
 .v8-r1,.v8-r2{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px}
@@ -1950,6 +2068,10 @@ body.v8-off .v8-offbar{display:block}
         <!-- Hoàn tác nhanh & Lịch sử hoạt động -->
         <button class="btn btn-outline-warning btn-sm" id="btnQuickUndo" onclick="quickUndoLastAction()" style="display:none;" title="Lui lại thao tác vừa thực hiện">
           <i class="fas fa-undo-alt"></i> <span class="d-none d-lg-inline">Lui lại</span>
+        </button>
+        <button class="btn btn-outline-warning text-dark fw-bold btn-sm position-relative" id="btnStaffLeaveRequests" onclick="openStaffLeaveModal()" style="display:none;" title="Xem đơn xin phép vắng của các lớp Thầy/Cô giảng dạy (tự động duyệt khi điểm danh)">
+          <i class="fas fa-envelope-open-text"></i> <span class="d-none d-md-inline">Đơn phép</span>
+          <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="staffLeaveBadge" style="display:none; font-size:0.62rem;">0</span>
         </button>
         <button class="btn btn-outline-secondary btn-sm" id="btnActivityHistory" onclick="openActivityHistoryModal()" style="display:none;" title="Xem lịch sử thao tác & hoàn tác">
           <i class="fas fa-history"></i> <span class="d-none d-md-inline">Lịch sử</span>
@@ -2191,10 +2313,13 @@ body.v8-off .v8-offbar{display:block}
               <button class="btn btn-outline-danger btn-sm" onclick="clearSubjectWeekScheduleWeb()"><i class="fas fa-eraser"></i> Xóa Lịch Môn</button>
               <button class="btn btn-outline-secondary btn-sm ms-auto" onclick="exportTKBMatrixExcel()"><i class="fas fa-file-excel"></i> Xuất Excel</button>
               <button class="btn btn-outline-secondary btn-sm" onclick="copyScheduleToNextWeekWeb()"><i class="fas fa-copy"></i> Copy sang tuần sau</button>
-              <button class="btn btn-success btn-sm ms-2" onclick="openBaoGiangModal()"><i class="fas fa-envelope"></i> Gửi Báo Giảng</button>
-              <button class="btn btn-primary btn-sm ms-2 fw-bold" onclick="openSmartTeacherScheduleModal()"><i class="fas fa-magic me-1"></i> Xếp lịch Thông minh theo GV</button>
+              <button class="btn btn-outline-success btn-sm fw-bold" id="btnMissingRoomsAlert" onclick="openMissingRoomsModal(false)" title="Quét & điền nhanh các buổi học chưa xếp phòng"><i class="fas fa-check-circle me-1"></i> Đủ phòng tuần này</button>
+              <button class="btn btn-success btn-sm ms-1" onclick="openBaoGiangModal()"><i class="fas fa-envelope"></i> Gửi Báo Giảng</button>
+              <button class="btn btn-primary btn-sm ms-1 fw-bold" onclick="openSmartTeacherScheduleModal()"><i class="fas fa-magic me-1"></i> Xếp lịch Thông minh theo GV</button>
             </div>
-            
+
+            <div id="tkbMissingRoomBanner" class="tkb-missing-banner" style="display:none;"></div>
+
             <div id="adminMatrixWrapper" class="matrix-wrapper" style="overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 10px;">
               <div class="h-100"><table class="matrix-table" id="adminMatrixTableHtml"></table></div>
               <div id="mobileAdminTimetable" style="display: none !important;"></div>
@@ -3156,7 +3281,7 @@ body.v8-off .v8-offbar{display:block}
   <nav class="sp-tabs">
     <button type="button" class="sp-tabbtn nav-stu-TKB active" onclick="switchStudentTab('TKB')"><i class="fas fa-calendar-alt"></i> Lịch học &amp; Thi</button>
     <button type="button" class="sp-tabbtn nav-stu-GRADES" id="spTabGradesBtn" onclick="switchStudentTab('GRADES')"><i class="fas fa-clipboard-check"></i> Điểm quá trình <span class="sp-gbadge" id="spGradeBadgeTop" style="display:none;">0</span></button>
-    <button type="button" class="sp-tabbtn nav-stu-PROGRESS" onclick="switchStudentTab('PROGRESS')"><i class="fas fa-chart-line"></i> Tiến độ các môn</button>
+    <button type="button" class="sp-tabbtn nav-stu-PROGRESS" onclick="switchStudentTab('PROGRESS')"><i class="fas fa-chart-line"></i> Tiến độ hỗ trợ học lại/ghép</button>
   </nav>
 
   <main class="sp-scroll" id="spScroll">
@@ -3235,12 +3360,23 @@ body.v8-off .v8-offbar{display:block}
         </div>
       </section>
 
-      <!-- TAB TIẾN ĐỘ -->
+      <!-- TAB TIẾN ĐỘ HỖ TRỢ HỌC LẠI / GHÉP -->
       <section id="stuTabProgress" style="display:none;">
-        <div class="sp-ptitle"><i class="fas fa-door-open" style="color:#2563eb"></i> Tiến độ các môn đang mở (toàn Khoa)</div>
-        <div class="sp-notice">
-          <b><i class="fas fa-info-circle"></i> Lưu ý cho sinh viên học lại / học ghép:</b><br>
-          Hệ thống chỉ nhận ghép lớp với môn có tiến độ <b>không quá 30%</b>. Môn đã vượt 30% sẽ tự động đóng ghép.
+        <div class="sp-ptitle"><i class="fas fa-door-open" style="color:#2563eb"></i> Tiến độ hỗ trợ học lại / ghép (toàn Khoa)</div>
+        <div class="sp-retake-box" id="spRetakeGuideBox">
+          <div class="sp-retake-hd">
+            <h4><i class="fas fa-file-alt text-primary"></i> Hướng dẫn &amp; Mẫu Phiếu Đăng Ký Học Lại / Học Ghép</h4>
+          </div>
+          <ol class="sp-retake-steps">
+            <li>Kiểm tra danh sách bên dưới để chọn môn <b>Đang mở ghép (tiến độ ≤ 30%)</b> — môn quá 30% sẽ tự động đóng ghép.</li>
+            <li>Bấm <b>Tải mẫu Phiếu đăng ký học lại (.docx)</b> hoặc <b>Xem &amp; In Phiếu (A4)</b> (mẫu Khoa Công nghệ Ô tô — <b>1 tờ A4 gồm 4 phiếu</b>).</li>
+            <li><b style="color:#b45309">✂️ Lưu ý:</b> Sinh viên <b>in ra và cắt lấy 1 phiếu thôi nếu đăng ký 1 môn</b>, sau đó điền đầy đủ thông tin cá nhân, môn đăng ký học lại, lớp đăng ký học lại và <b>ký tên</b>.</li>
+            <li><b>Gặp trực tiếp Thầy/Cô phụ trách Khoa để ký xác nhận</b> (Số TC, Số tiền theo hướng dẫn), sau đó hoàn tất thủ tục đóng học phí &amp; nộp phiếu để được ghép vào lớp.</li>
+          </ol>
+          <div class="sp-retake-acts">
+            <button type="button" class="btn-pr" id="btnDownloadRetakeWord" onclick="spDownloadRetakeWord('','')"><i class="fas fa-file-word"></i> Tải mẫu Phiếu đăng ký học lại (.docx)</button>
+            <button type="button" class="btn-wd" id="btnPrintRetakeBlank" onclick="spPrintRetakeForm('','')"><i class="fas fa-print"></i> Xem &amp; In Phiếu (A4 - 4 phiếu)</button>
+          </div>
         </div>
         <div class="sp-card" style="padding:10px 12px;">
           <div class="sp-field" style="height:42px;">
@@ -3274,7 +3410,7 @@ body.v8-off .v8-offbar{display:block}
   <nav class="sp-bottom">
     <button type="button" class="sp-bn nav-stu-TKB active" onclick="switchStudentTab('TKB')"><i class="fas fa-calendar-alt"></i><span>Lịch học</span></button>
     <button type="button" class="sp-bn nav-stu-GRADES" id="spNavGradesBtn" onclick="switchStudentTab('GRADES')"><i class="fas fa-clipboard-check"></i><span>Điểm QT</span><span class="sp-gbadge-m" id="spGradeBadgeMob" style="display:none;">0</span></button>
-    <button type="button" class="sp-bn nav-stu-PROGRESS" onclick="switchStudentTab('PROGRESS')"><i class="fas fa-chart-line"></i><span>Tiến độ</span></button>
+    <button type="button" class="sp-bn nav-stu-PROGRESS" onclick="switchStudentTab('PROGRESS')"><i class="fas fa-chart-line"></i><span>Học lại/Ghép</span></button>
   </nav>
 </div>
 
@@ -3751,7 +3887,15 @@ function buildMatrixHtml(list, startDateStr, isAdmin, isLopMode) {
       if (cellItems.length > 0) {
         cellItems.forEach(function(item) {
           var gvDisplayName = item.gvName ? item.gvName : item.gvId;
-          var phongDisplay = item.phong || 'Chưa xếp';
+          var isMissingRoom = (typeof window.isUnassignedRoomGlobal === 'function')
+            ? window.isUnassignedRoomGlobal(item.phong)
+            : (!item.phong || String(item.phong).trim() === '');
+          var phongDisplay = isMissingRoom ? 'Chưa xếp' : item.phong;
+          var missingCellCls = (isAdmin && isMissingRoom) ? ' missing-room-cell' : '';
+          var quickRoomAttrs = ' data-rowidx="'+item.rowIdx+'" data-ngay="'+item.ngayIso+'" data-ca="'+item.ca+'" data-phong="'+escapeHtml(item.phong || '')+'" data-lop="'+escapeHtml(item.lop)+'" data-mon="'+escapeHtml(item.mon)+'" data-gv="'+escapeHtml(item.gvId)+'" data-ghichu="'+escapeHtml(item.ghichu || '')+'" ';
+          var roomLineHtml = (isAdmin && isMissingRoom)
+            ? '<div class="mt-1"><span class="badge-missing-room"'+quickRoomAttrs+'onclick="event.stopPropagation(); openRescheduleModal(this, true)" title="Bấm để điền phòng ngay"><i class="fas fa-exclamation-triangle"></i> CHƯA ĐIỀN PHÒNG!</span></div>'
+            : '<div class="mt-1 small '+(item.isExam?'text-danger':'text-primary')+' fw-bold"><i class="fas fa-door-open"></i> P: '+escapeHtml(phongDisplay)+'</div>';
           
           // [ĐÃ SỬA LỖI] Cảnh báo Lớp Ghép
           var mergedNote = (isLopMode && item.isMerged) ? '<div class="mt-1 p-1 rounded bg-warning-light border border-warning text-dark fw-bold" style="font-size:0.75rem;"><i class="fas fa-exclamation-triangle"></i> Lớp ghép: Tra MSSV để xem đúng nhóm</div>' : '';
@@ -3761,15 +3905,15 @@ function buildMatrixHtml(list, startDateStr, isAdmin, isLopMode) {
             var btnActions = "";
             if (isAdmin) {
               btnActions = '<div class="d-flex gap-1 mt-2 pt-2 border-top">'+
-                '<button class="btn btn-sm btn-outline-primary py-0 px-1 flex-fill" style="font-size:0.7rem; min-height:24px;" data-rowidx="'+item.rowIdx+'" data-ngay="'+item.ngayIso+'" data-ca="'+item.ca+'" data-phong="'+escapeHtml(item.phong)+'" data-lop="'+escapeHtml(item.lop)+'" data-mon="'+escapeHtml(item.mon)+'" data-gv="'+escapeHtml(item.gvId)+'" data-ghichu="'+escapeHtml(item.ghichu)+'" onclick="openRescheduleModal(this)"><i class="fas fa-exchange-alt"></i></button>'+
+                '<button class="btn btn-sm btn-outline-primary py-0 px-1 flex-fill" style="font-size:0.7rem; min-height:24px;"'+quickRoomAttrs+'onclick="openRescheduleModal(this)"><i class="fas fa-exchange-alt"></i></button>'+
                 '<button class="btn btn-sm btn-outline-danger py-0 px-1 flex-fill" style="font-size:0.7rem; min-height:24px;" onclick="deleteScheduleWeb('+item.rowIdx+')"><i class="fas fa-trash"></i></button>'+
                 '</div>';
             }
             var examNoteHtml = item.ghichu ? '<div class="mt-2 p-1 rounded" style="background:#fef2f2; border:1px dashed #fca5a5; color:#dc2626; font-size:0.8rem;"><i class="fas fa-thumbtack"></i> <b>Lưu ý:</b> '+item.ghichu+'</div>' : '';
             
-            html += '<div class="matrix-cell exam-cell" onclick="this.classList.toggle(\'expanded\')">'+
+            html += '<div class="matrix-cell exam-cell'+missingCellCls+'" onclick="this.classList.toggle(\'expanded\')">'+
               '<div class="cell-header"><strong><i class="fas fa-file-signature text-danger"></i> '+item.mon+'</strong><span class="text-muted small d-block">'+item.lop+'</span>'+
-              '<div class="mt-1 small text-danger fw-bold"><i class="fas fa-door-open"></i> P: '+phongDisplay+'</div>'+
+              roomLineHtml +
               mergedNote + examNoteHtml +
               '</div>'+
               '<div class="cell-details">'+btnActions+'</div></div>';
@@ -3777,16 +3921,16 @@ function buildMatrixHtml(list, startDateStr, isAdmin, isLopMode) {
             var btnActions = "";
             if (isAdmin) {
               btnActions = '<div class="d-flex gap-1 mt-2 pt-2 border-top">'+
-                '<button class="btn btn-sm btn-outline-primary py-0 px-1 flex-fill" style="font-size:0.7rem; min-height:24px;" data-rowidx="'+item.rowIdx+'" data-ngay="'+item.ngayIso+'" data-ca="'+item.ca+'" data-phong="'+escapeHtml(item.phong)+'" data-lop="'+escapeHtml(item.lop)+'" data-mon="'+escapeHtml(item.mon)+'" data-gv="'+escapeHtml(item.gvId)+'" data-ghichu="'+escapeHtml(item.ghichu)+'" onclick="openRescheduleModal(this)"><i class="fas fa-exchange-alt"></i></button>'+
+                '<button class="btn btn-sm btn-outline-primary py-0 px-1 flex-fill" style="font-size:0.7rem; min-height:24px;"'+quickRoomAttrs+'onclick="openRescheduleModal(this)"><i class="fas fa-exchange-alt"></i></button>'+
                 '<button class="btn btn-sm btn-outline-primary py-0 px-1 flex-fill" style="font-size:0.7rem; min-height:24px;" onclick="holdScheduleWeb('+item.rowIdx+', \''+escapeHtml(item.lop)+'\', \''+escapeHtml(item.mon)+'\', \''+escapeHtml(item.gvId)+'\')"><i class="fas fa-pause"></i></button>'+
                 '<button class="btn btn-sm btn-outline-danger py-0 px-1 flex-fill" style="font-size:0.7rem; min-height:24px;" onclick="deleteScheduleWeb('+item.rowIdx+')"><i class="fas fa-trash"></i></button>'+
                 '</div>';
             }
             
             var extCls = item.ghichu.includes('[LỊCH_NGOÀI]') ? 'external-cell' : '';
-html += '<div class="matrix-cell '+extCls+'" onclick="this.classList.toggle(\'expanded\')">'+
+            html += '<div class="matrix-cell '+extCls+missingCellCls+'" onclick="this.classList.toggle(\'expanded\')">'+
               '<div class="cell-header"><strong>'+item.mon+'</strong><span class="text-muted small d-block">'+item.lop+'</span>'+
-              '<div class="mt-1 small text-primary fw-bold"><i class="fas fa-door-open"></i> P: '+phongDisplay+'</div>'+
+              roomLineHtml +
               mergedNote + noteHtml +
               '</div>'+
               '<div class="cell-details">'+
@@ -4412,10 +4556,37 @@ function forceCompleteWeb(lop, mon) {
 function toggleStudentViewLockStatus() {
   var week = document.getElementById('adminWeekInput').value;
   var nextState = (currentWeekLockState === "LOCKED") ? "OPEN" : "LOCKED";
-  google.script.run.withSuccessHandler(function(msg) {
-    Swal.fire("Hoàn tất", msg, "success");
-    loadAdminTimetableMatrix();
-  }).setWeekLockStatus(week, nextState);
+  function doToggleLock() {
+    google.script.run.withSuccessHandler(function(msg) {
+      Swal.fire("Hoàn tất", msg, "success");
+      loadAdminTimetableMatrix();
+    }).setWeekLockStatus(week, nextState);
+  }
+  if (nextState === "OPEN" && typeof window.getWeekMissingRoomItems === 'function') {
+    var miss = window.getWeekMissingRoomItems();
+    if (miss.length > 0) {
+      Swal.fire({
+        title: 'Tuần này còn ' + miss.length + ' buổi CHƯA ĐIỀN PHÒNG!',
+        html: '<div class="text-start small">Nếu mở khóa ngay, sinh viên sẽ thấy <b>Chưa xếp phòng</b> ở ' + miss.length + ' buổi học trong tuần này.<br>Bạn muốn điền phòng nhanh trước hay vẫn mở khóa lịch?</div>',
+        icon: 'warning',
+        showCancelButton: true,
+        showDenyButton: true,
+        confirmButtonText: '⚡ Điền phòng ngay',
+        denyButtonText: 'Vẫn mở khóa tuần',
+        cancelButtonText: 'Hủy',
+        confirmButtonColor: '#dc2626',
+        denyButtonColor: '#2563eb'
+      }).then(function(r) {
+        if (r.isConfirmed) {
+          if (typeof window.openMissingRoomsModal === 'function') window.openMissingRoomsModal(false);
+        } else if (r.isDenied) {
+          doToggleLock();
+        }
+      });
+      return;
+    }
+  }
+  doToggleLock();
 }
 
 function clearSubjectWeekScheduleWeb() {
@@ -4787,7 +4958,7 @@ function loadHocLaiGroups() {
   
   var lopGhep = targetVal.split('|')[0];
   
-  if (lopGhep.includes(',')) {
+  if (lopGhep.includes(',') && !(lopGhep.includes('(') && lopGhep.includes(')'))) {
     var groups = lopGhep.split(',');
     nhomSel.innerHTML = '<option value="">Nhóm (Mặc định)</option>';
     groups.forEach(function(g) {
@@ -4981,17 +5152,20 @@ function renderSmartDropdown() {
       }
       // ----------------------------------
 
+      var lvPrefix = (s.leavePending > 0)
+        ? ('[📩 ' + s.leavePending + ' đơn phép] ')
+        : ((s.leaveCount > 0) ? ('[📩 ' + s.leaveCount + ' đơn] ') : '');
       if (s.status === "TODAY") {
-        opts += '<option value="'+s.key+'">🟢 [HÔM NAY] '+s.ca+' - '+ngayVN + textSiSo + '</option>';
+        opts += '<option value="'+s.key+'">'+lvPrefix+'🟢 [HÔM NAY] '+s.ca+' - '+ngayVN + textSiSo + '</option>';
         if (!autoSelectKey) autoSelectKey = s.key;
       } else if (s.status === "MISSED") {
-        opts += '<option value="'+s.key+'" style="color:red; font-weight:bold;">🔴 [QUÊN ĐIỂM DANH] '+s.ca+' - '+ngayVN + textSiSo + '</option>';
+        opts += '<option value="'+s.key+'" style="color:red; font-weight:bold;">'+lvPrefix+'🔴 [QUÊN ĐIỂM DANH] '+s.ca+' - '+ngayVN + textSiSo + '</option>';
         hasMissed = true;
         if (!autoSelectKey) autoSelectKey = s.key;
       } else if (s.status === "DONE") {
-        opts += '<option value="'+s.key+'">⚪ [Đã điểm danh] '+s.ca+' - '+ngayVN + textSiSo + '</option>';
+        opts += '<option value="'+s.key+'">'+lvPrefix+'⚪ [Đã điểm danh] '+s.ca+' - '+ngayVN + textSiSo + '</option>';
       } else {
-        opts += '<option value="'+s.key+'">⏳ [Sắp tới] '+s.ca+' - '+ngayVN + textSiSo + '</option>';
+        opts += '<option value="'+s.key+'">'+lvPrefix+'⏳ [Sắp tới] '+s.ca+' - '+ngayVN + textSiSo + '</option>';
       }
     });
   }
@@ -5279,6 +5453,27 @@ function renderTable() {
         '</div>' +
       '</div>';
       
+      // BANNER TỔNG HỢP ĐƠN XIN PHÉP CỦA BUỔI HỌC HIỆN TẠI (để GV mở điểm danh thấy ngay!)
+      var lvStudents = students.filter(function(stItem) { return !!stItem.leaveReq; });
+      if (lvStudents.length > 0) {
+        var pendCnt = lvStudents.filter(function(stItem) { return stItem.leaveReq.trangThai === 'CHO_DUYET'; }).length;
+        html += '<div class="atd-lv-banner" id="atdLeaveSummaryBanner">' +
+          '<div class="atd-lv-banner-hd">' +
+            '<span><i class="fas fa-envelope-open-text me-1"></i>Buổi học này có <b>' + lvStudents.length + '</b> sinh viên nộp Đơn xin phép vắng' +
+              (pendCnt > 0 ? (' (<span class="text-danger">' + pendCnt + ' đơn chờ xác nhận</span>)') : '') + '</span>' +
+          '</div>' +
+          '<div class="atd-lv-chips">' + lvStudents.map(function(stItem) {
+            var stL = stItem.leaveReq.trangThai;
+            var clsC = stL === 'DA_DUYET' ? 'approved' : (stL === 'TU_CHOI' ? 'rejected' : (stL === 'CO_MAT' ? 'attended' : ''));
+            var icoC = stL === 'DA_DUYET' ? '✅' : (stL === 'TU_CHOI' ? '❌' : (stL === 'CO_MAT' ? '🟢' : '📩'));
+            var stTxt = stL === 'DA_DUYET' ? 'Đã duyệt PHÉP' : (stL === 'TU_CHOI' ? 'Không duyệt' : (stL === 'CO_MAT' ? 'Đã có mặt' : 'Xem đơn'));
+            return '<button type="button" class="atd-lv-chip ' + clsC + '" onclick="staffFocusAndViewLeave(\'' + escapeHtml(stItem.mssv) + '\')">' +
+              icoC + ' <b>' + escapeHtml(stItem.ho + ' ' + stItem.ten) + '</b> (' + escapeHtml(stItem.mssv) + ') · ' + stTxt + '</button>';
+          }).join('') + '</div>' +
+          '<div class="atd-lv-hint"><i class="fas fa-info-circle me-1"></i>Bấm tên sinh viên để xem ảnh đơn viết tay. Khi Thầy/Cô chọn <b>Phép</b> và bấm <b>Ghi nhận điểm danh</b> → hệ thống <b>tự động duyệt đơn</b> cho SV; nếu để <b>Vắng</b> → tự động <b>không duyệt</b>.</div>' +
+        '</div>';
+      }
+
       html += '<div class="card-custom p-0 overflow-hidden mb-3"><div class="table-responsive border-0"><table class="table">';
       html += '<thead><tr><th>STT</th><th>MSSV</th><th>Họ và Tên</th><th class="text-center">Vắng</th><th class="text-center">Phép</th><th class="text-center">Trạng thái điểm danh</th></tr></thead><tbody id="atdTableBody">';
       students.forEach(function(s, i) {
@@ -5289,7 +5484,7 @@ function renderTable() {
         var cP = (st === 'PHÉP') ? 'checked' : '';
         var cM = (!cV && !cP) ? 'checked' : '';
 
-        // --- LOGIC HIỂN THỊ THỜI GIAN VÀO TRỄ CHO GV ---
+        // --- LOGIC HIỂN THỊ THỜI GIAN VÀO TRỄ & ĐƠN XIN PHÉP CHO GV ---
         var hlBadge = '<span class="badge bg-primary-soft ms-1 fw-normal">'+s.lopGoc+(s.nhom ? ' - '+s.nhom : '')+'</span>';
         if (s.ghichu) {
           var cleanNote = s.ghichu.replace(/\[CẤM:.*?\]/g, '').trim(); // Giấu tag cấm đi cho đẹp
@@ -5299,10 +5494,24 @@ function renderTable() {
             hlBadge += '<br><span class="badge bg-danger-soft ms-1 mt-1 fw-normal" title="'+escapeHtml(cleanNote)+'"><i class="fas fa-redo"></i> '+escapeHtml(cleanNote)+'</span>';
           }
         }
+        var rowExtraCls = '';
+        if (s.leaveReq) {
+          var lvSt = s.leaveReq.trangThai;
+          var lvCls = lvSt === 'DA_DUYET' ? 'approved' : (lvSt === 'TU_CHOI' ? 'rejected' : (lvSt === 'CO_MAT' ? 'attended' : 'pending'));
+          var lvTxt = lvSt === 'DA_DUYET'
+            ? '✅ Đã duyệt PHÉP · Xem đơn'
+            : (lvSt === 'TU_CHOI'
+              ? '❌ Không duyệt (Vắng) · Xem đơn'
+              : (lvSt === 'CO_MAT'
+                ? '🟢 Có nộp đơn nhưng đã Có mặt · Xem'
+                : '📩 Có đơn xin phép · Xem đơn viết tay'));
+          if (lvSt === 'CHO_DUYET') rowExtraCls = ' atd-has-lv-pending';
+          hlBadge += '<br><button type="button" class="atd-lv-pill '+lvCls+'" onclick="staffViewAttendanceLeave(\''+escapeHtml(s.mssv)+'\')">'+lvTxt+'</button>';
+        }
         // ------------------------------------------------
 
         var normSearch = strNormalize(s.mssv + ' ' + s.ho + ' ' + s.ten);
-        html += '<tr class="atd-row" data-mssv="'+s.mssv+'" data-name="'+normSearch+'"><td>'+(i + 1)+'</td><td><span class="fw-bold text-muted">'+s.mssv+'</span></td><td><span class="fw-bold">'+escapeHtml(s.ho+' '+s.ten)+'</span><br>'+hlBadge+'</td><td class="text-center '+vClass+'">'+s.tongVang+'</td><td class="text-center '+pClass+'">'+s.tongPhep+'</td><td><div class="btn-group w-100" role="group"><input type="radio" class="btn-check" name="atd_'+i+'" id="btn_cm_'+i+'" value="Có mặt" '+cM+'><label class="btn btn-sm btn-outline-primary" for="btn_cm_'+i+'">Có mặt</label><input type="radio" class="btn-check" name="atd_'+i+'" id="btn_v_'+i+'" value="Vắng" '+cV+'><label class="btn btn-sm btn-outline-danger" for="btn_v_'+i+'">Vắng</label><input type="radio" class="btn-check" name="atd_'+i+'" id="btn_p_'+i+'" value="Phép" '+cP+'><label class="btn btn-sm btn-outline-primary" style="color:#d97706; border-color:var(--border);" for="btn_p_'+i+'">Phép</label></div></td></tr>';
+        html += '<tr class="atd-row'+rowExtraCls+'" data-mssv="'+s.mssv+'" data-haslv="'+(s.leaveReq?'1':'0')+'" data-name="'+normSearch+'"><td>'+(i + 1)+'</td><td><span class="fw-bold text-muted">'+s.mssv+'</span></td><td><span class="fw-bold">'+escapeHtml(s.ho+' '+s.ten)+'</span><br>'+hlBadge+'</td><td class="text-center '+vClass+'">'+s.tongVang+'</td><td class="text-center '+pClass+'">'+s.tongPhep+'</td><td><div class="btn-group w-100" role="group"><input type="radio" class="btn-check" name="atd_'+i+'" id="btn_cm_'+i+'" value="Có mặt" '+cM+'><label class="btn btn-sm btn-outline-primary" for="btn_cm_'+i+'">Có mặt</label><input type="radio" class="btn-check" name="atd_'+i+'" id="btn_v_'+i+'" value="Vắng" '+cV+'><label class="btn btn-sm btn-outline-danger" for="btn_v_'+i+'">Vắng</label><input type="radio" class="btn-check" name="atd_'+i+'" id="btn_p_'+i+'" value="Phép" '+cP+'><label class="btn btn-sm btn-outline-primary" style="color:#d97706; border-color:var(--border);" for="btn_p_'+i+'">Phép</label></div></td></tr>';
       });
       html += '</tbody></table></div></div>';
       html += '<button id="btnSaveAttendance" class="btn btn-primary w-100" onclick="saveA()"><i class="fas fa-save"></i> GHI NHẬN ĐIỂM DANH</button>';
@@ -5468,10 +5677,15 @@ function saveA() {
   
   showLoading('Đang lưu dữ liệu...');
   
+  var actorDispName = (document.getElementById('uName') && document.getElementById('uName').innerText && document.getElementById('uName').innerText !== 'User')
+    ? document.getElementById('uName').innerText.trim()
+    : (typeof currentUser !== 'undefined' ? currentUser : '');
   google.script.run
     .withSuccessHandler(function(res) {
       if (res && res.success) {
-        Swal.fire({title: 'Đã lưu thành công!', icon: 'success', timer: 1500, showConfirmButton: false});
+        var okText = (res.message && res.message.indexOf('(') !== -1) ? res.message : '';
+        Swal.fire({title: 'Đã lưu điểm danh!', text: okText, icon: 'success', timer: okText ? 2600 : 1500, showConfirmButton: false});
+        if (typeof window.refreshStaffLeaveBadge === 'function') window.refreshStaffLeaveBadge();
         loadData(false);
       } else {
         var errorMsg = (res && res.message) ? res.message : 'Lỗi không xác định';
@@ -5482,7 +5696,7 @@ function saveA() {
       Swal.fire('Lỗi kết nối', err.message, 'error');
       hideLoadingScreen();
     })
-    .saveAttendance(ngayCa, l, m, vang, userRole);
+    .saveAttendance(ngayCa, l, m, vang, userRole, actorDispName);
 
 }
 
@@ -5963,22 +6177,33 @@ function doChangePassword() {
   }).changePassword(currentUser, oldP, newP);
 }
 
-function openRescheduleModal(btn) {
+function openRescheduleModal(btn, focusRoom) {
   var rowIdx = btn.dataset.rowidx;
   var currentNgay = btn.dataset.ngay;
   var currentCa = btn.dataset.ca;
   var currentPhong = btn.dataset.phong;
+  var isRoomMissing = (typeof window.isUnassignedRoomGlobal === 'function') ? window.isUnassignedRoomGlobal(currentPhong) : !currentPhong;
+  var safePhongVal = isRoomMissing ? '' : currentPhong;
   var lop = btn.dataset.lop;
   var mon = btn.dataset.mon;
   var gvUser = btn.dataset.gv;
   var ghichu = btn.dataset.ghichu || "";
   var track = globalAdminTracking.find(function(t) { return strNormalize(t.mon) === strNormalize(mon) && strNormalize(t.user) === strNormalize(gvUser); });
   var parentLop = track ? track.lop : lop;
+  var roomWarnBox = isRoomMissing
+    ? '<div class="alert alert-danger py-2 px-3 small fw-bold mb-2 text-start"><i class="fas fa-exclamation-triangle me-1"></i>Buổi học này đang CHƯA ĐIỀN PHÒNG HỌC — hãy nhập phòng bên dưới!</div>'
+    : '';
 
   Swal.fire({
-    title: 'DỜI LỊCH DẠY',
-    html: '<div class="text-start mb-3 p-3 bg-primary-light rounded small">Môn: <b class="text-primary">'+mon+'</b><br>Lớp: <b>'+lop+'</b></div><div class="mb-2 text-start"><label class="form-label small fw-bold">Ngày dạy mới:</label><input type="date" id="swalNewNgay" class="form-control" value="'+currentNgay+'"></div><div class="mb-2 text-start"><label class="form-label small fw-bold">Ca dạy mới:</label><select id="swalNewCa" class="form-select"><option value="Ca Sáng" '+(currentCa==='Ca Sáng'?'selected':'')+'>Ca Sáng</option><option value="Ca Chiều" '+(currentCa==='Ca Chiều'?'selected':'')+'>Ca Chiều</option><option value="Ca Tối" '+(currentCa==='Ca Tối'?'selected':'')+'>Ca Tối</option></select></div><div class="mb-2 text-start"><label class="form-label small fw-bold">Phòng học mới:</label><input type="text" id="swalNewPhong" class="form-control" value="'+currentPhong+'"></div><div class="mb-2 text-start"><label class="form-label small fw-bold">Ghi chú (Tùy chọn):</label><input type="text" id="swalNewGhiChu" class="form-control" value="'+ghichu+'" placeholder="VD: Bù hoặc Thi"></div>',
-    showCancelButton: true, confirmButtonText: 'Xác nhận dời', cancelButtonText: 'Hủy',
+    title: focusRoom ? 'ĐIỀN PHÒNG HỌC / CẬP NHẬT LỊCH' : 'DỜI LỊCH DẠY',
+    html: roomWarnBox + '<div class="text-start mb-3 p-3 bg-primary-light rounded small">Môn: <b class="text-primary">'+escapeHtml(mon)+'</b><br>Lớp: <b>'+escapeHtml(lop)+'</b></div><div class="mb-2 text-start"><label class="form-label small fw-bold">Ngày dạy mới:</label><input type="date" id="swalNewNgay" class="form-control" value="'+escapeHtml(currentNgay)+'"></div><div class="mb-2 text-start"><label class="form-label small fw-bold">Ca dạy mới:</label><select id="swalNewCa" class="form-select"><option value="Ca Sáng" '+(currentCa==='Ca Sáng'?'selected':'')+'>Ca Sáng</option><option value="Ca Chiều" '+(currentCa==='Ca Chiều'?'selected':'')+'>Ca Chiều</option><option value="Ca Tối" '+(currentCa==='Ca Tối'?'selected':'')+'>Ca Tối</option></select></div><div class="mb-2 text-start"><label class="form-label small fw-bold '+(isRoomMissing?'text-danger':'')+'">Phòng học mới:</label><input type="text" id="swalNewPhong" class="form-control '+(isRoomMissing?'border-danger':'')+'" value="'+escapeHtml(safePhongVal)+'" placeholder="VD: P.203, Xưởng 1..."></div><div class="mb-2 text-start"><label class="form-label small fw-bold">Ghi chú (Tùy chọn):</label><input type="text" id="swalNewGhiChu" class="form-control" value="'+escapeHtml(ghichu)+'" placeholder="VD: Bù hoặc Thi"></div>',
+    showCancelButton: true, confirmButtonText: focusRoom ? 'Lưu phòng & cập nhật' : 'Xác nhận dời', cancelButtonText: 'Hủy',
+    didOpen: function() {
+      if (focusRoom || isRoomMissing) {
+        var inp = document.getElementById('swalNewPhong');
+        if (inp) { inp.focus(); inp.select(); }
+      }
+    },
     preConfirm: function() {
       return {
         ngay: document.getElementById('swalNewNgay').value,
@@ -5996,7 +6221,16 @@ function openRescheduleModal(btn) {
         if (res.success === false) {
           Swal.fire('TỪ CHỐI DỜI LỊCH', res.message, 'error');
         } else {
-          Swal.fire('Thành công', 'Đã cập nhật lịch dạy mới!', 'success');
+          window.__stsBundleStale = true;
+          if (res && res.missingRoom) {
+            Swal.fire({
+              title: 'Đã cập nhật (Chưa điền phòng!)',
+              html: '<div class="small">Lịch dạy đã lưu nhưng <b>vẫn chưa có phòng học</b>. Ô này sẽ tiếp tục báo động đỏ trên Ma trận TKB cho đến khi bạn điền phòng.</div>',
+              icon: 'warning'
+            });
+          } else {
+            Swal.fire('Thành công', 'Đã cập nhật lịch dạy mới!', 'success');
+          }
           loadAdminTimetableMatrix();
           loadAdminDashboard();
         }
@@ -6244,6 +6478,7 @@ function loadAdminTimetableMatrix(isSilent) {
     }
     document.getElementById('adminMatrixTableHtml').innerHTML = buildMatrixHtml(res.timetable, weekInput, true);
     document.getElementById('mobileAdminTimetable').innerHTML = buildMobileTimetableHtml(res.groupedTimetable, weekInput, true);
+    if (typeof window.updateMissingRoomsAlertUI === 'function') window.updateMissingRoomsAlertUI(res.timetable, weekInput);
   }).getWeeklyTimetable(weekInput, filterStr, filterGv, false, userRole);
 }
 
@@ -8573,18 +8808,27 @@ function buildMobileTimetableHtml(groupedData, startDateStr, isAdmin, isLopMode)
           btnActions += '</div>';
         }
 
+        var isMissingRoomMob = (typeof window.isUnassignedRoomGlobal === 'function')
+          ? window.isUnassignedRoomGlobal(item.phong)
+          : (!item.phong || String(item.phong).trim() === '');
+        var mobMissCls = (isAdmin && isMissingRoomMob) ? ' missing-room-mobile-card' : '';
+        var mobRoomAttrs = ' data-rowidx="'+item.rowIdx+'" data-ngay="'+item.ngayIso+'" data-ca="'+item.ca+'" data-phong="'+escapeHtml(item.phong || '')+'" data-lop="'+escapeHtml(item.lop)+'" data-mon="'+escapeHtml(item.mon)+'" data-gv="'+escapeHtml(item.gvId)+'" data-ghichu="'+escapeHtml(item.ghichu || '')+'" ';
+        var mobRoomHtml = (isAdmin && isMissingRoomMob)
+          ? '<span class="badge-missing-room"'+mobRoomAttrs+'onclick="openRescheduleModal(this, true)"><i class="fas fa-exclamation-triangle"></i> CHƯA ĐIỀN PHÒNG!</span>'
+          : ('<span>' + escapeHtml(isMissingRoomMob ? 'Chưa xếp' : item.phong) + '</span>');
+
         // Ráp HTML Trục thời gian
         listHtml += '<div class="timeline-row">' +
                       '<div class="timeline-time">' +
                         '<div class="t-main">' + timeMain + '</div>' +
                         '<div class="t-sub">' + item.ca + '</div>' +
                       '</div>' +
-                      '<div class="timeline-card ' + cardClass + '">' +
+                      '<div class="timeline-card ' + cardClass + mobMissCls + '">' +
                         mergedNote +
                         '<div class="mon-title">' + iconMon + item.mon + '</div>' +
                         '<div class="info-line"><i class="fas fa-users"></i> <span>' + item.lop + '</span></div>' +
                         '<div class="info-line"><i class="fas fa-user-tie"></i> <span>' + gvDisplayName + '</span></div>' +
-                        '<div class="info-line"><i class="fas fa-door-open"></i> <span>' + phongDisplay + '</span></div>' +
+                        '<div class="info-line"><i class="fas fa-door-open"></i> ' + mobRoomHtml + '</div>' +
                         ghiChuHtml + btnActions +
                       '</div>' +
                     '</div>';
@@ -8757,6 +9001,7 @@ function spItemHtml(it, lopMode, compact){
   h+='<div class="sp-row room"><i class="fas fa-door-open"></i><span>'+(it.phong?escapeHtml(it.phong):'<span class="muted">Chưa xếp phòng</span>')+'</span></div>';
   if(note) h+='<div class="sp-note"><i class="fas '+(it.isExam?'fa-thumbtack':'fa-circle-info')+'"></i> '+(it.isExam?'<b>Lưu ý:</b> ':'')+escapeHtml(note)+'</div>';
   if(lopMode&&it.isMerged) h+='<div class="sp-warn"><i class="fas fa-triangle-exclamation"></i> Lớp ghép: hãy tra bằng MSSV (Lịch cá nhân) để xem đúng nhóm của bạn.</div>';
+  if(typeof window.spBuildLeaveBarHtml==='function') h+=window.spBuildLeaveBarHtml(it, lopMode);
   return h+'</div>';
 }
 
@@ -8890,7 +9135,7 @@ function renderStudentTkb(res, week){
     spCollapse(t); spWantCollapse=false;
   }
   var list=(res.timetable||[]).map(function(it){ var o={}; for(var k in it) o[k]=it[k]; o.ngayIso=spNormIso(it.ngayIso); return o; });
-  var mon=spMonday(week), sig=JSON.stringify(list)+mon+spMode();
+  var mon=spMonday(week), sig=JSON.stringify(list)+mon+spMode()+JSON.stringify(window.__spLeaveMap||{});
   if(spData&&spData.sig===sig&&document.getElementById('spMobile')) return;   // không đổi => khỏi vẽ lại
   spData={list:list,week:mon,lopMode:(spMode()==='LOP'),sig:sig};
   spDraw();
@@ -9016,6 +9261,13 @@ function spApplyTkb(m, id, res, week, ts, stale){
     box.innerHTML='<div class="sp-empty"><i class="fas fa-circle-exclamation"></i>'+escapeHtml((res&&res.error)||'Không tìm thấy dữ liệu.')+'</div>';
     return;
   }
+  if (m === 'MSSV') {
+    window.__spLeaveMap = res.leaveMap || {};
+    window.__spStudentClass = res.studentClass || '';
+    window.__spStudentName = res.studentName || '';
+  } else {
+    window.__spLeaveMap = {};
+  }
   document.getElementById('studentWelcomeText').textContent = (m==='MSSV') ? 'Xin chào: '+res.studentName : 'Đang xem lịch chung của lớp: '+id;
   document.getElementById('studentWelcomeMsg').style.display='block';
   var r={}; for(var k in res) r[k]=res[k];
@@ -9105,15 +9357,20 @@ spWkItem=function(it, lopMode){
   if(note) h+='<div class="wk-note"><i class="fas fa-circle-info"></i> '+escapeHtml(note)+'</div>';
   if(it._clash) h+='<div class="wk-clash"><i class="fas fa-triangle-exclamation"></i> Có 2 buổi cùng ca – hãy hỏi lại Khoa để xác nhận.</div>';
   if(lopMode&&it.isMerged) h+='<div class="wk-warn"><i class="fas fa-triangle-exclamation"></i> Lớp ghép: tra bằng MSSV để xem đúng nhóm của bạn.</div>';
+  if(typeof window.spBuildLeaveBarHtml==='function') h+=window.spBuildLeaveBarHtml(it, lopMode);
   return h+'</div></div>';
 };
 
 spDraw=function(){
   var box=document.getElementById('spResult'), d=spData; if(!d) return;
-  if(!d.list.length){ box.innerHTML='<div class="sp-empty"><i class="fas fa-mug-hot"></i>Tuần này không có lịch học.</div>'; return; }
+  if(!d.list.length){ box.innerHTML='<div class="sp-empty"><i class="fas fa-mug-hot"></i>Tuần này không có lịch học.</div>'+(!d.lopMode?'<div class="hero-act" style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:8px;"><button type="button" style="background:#eff6ff;color:#1d4ed8;border-color:#93c5fd;" onclick="spPrintLeaveForm(false)"><i class="fas fa-file-signature"></i> Mẫu đơn xin phép</button><button type="button" style="background:#fffbeb;color:#92400e;border-color:#fcd34d;" onclick="spOpenLeaveHistoryModal()"><i class="fas fa-folder-open"></i> Đơn phép đã gửi'+(Object.keys(window.__spLeaveMap||{}).length?(' ('+Object.keys(window.__spLeaveMap||{}).length+')'):'')+'</button></div>':''); return; }
   var legend='<div class="sp-legend"><span><i style="background:#2563eb"></i>Lý thuyết</span><span><i style="background:#059669"></i>Thực hành</span><span><i style="background:#dc2626"></i>Thi</span><span><i style="background:#7c3aed"></i>Khoa khác</span></div>';
   box.innerHTML=spHero(d)+
-    '<div class="hero-act"><button type="button" onclick="spCopyWeek()"><i class="fas fa-copy"></i> Sao chép lịch tuần (gửi Zalo)</button></div>'+legend+
+    '<div class="hero-act" style="display:flex;flex-wrap:wrap;gap:6px;">' +
+      '<button type="button" onclick="spCopyWeek()"><i class="fas fa-copy"></i> Sao chép lịch tuần</button>' +
+      (!d.lopMode ? '<button type="button" style="background:#eff6ff;color:#1d4ed8;border-color:#93c5fd;" onclick="spPrintLeaveForm(false)"><i class="fas fa-file-signature"></i> Mẫu đơn xin phép</button>' : '') +
+      (!d.lopMode ? '<button type="button" style="background:#fffbeb;color:#92400e;border-color:#fcd34d;" onclick="spOpenLeaveHistoryModal()"><i class="fas fa-folder-open"></i> Đơn phép đã gửi' + (Object.keys(window.__spLeaveMap || {}).length ? (' (' + Object.keys(window.__spLeaveMap).length + ')') : '') + '</button>' : '') +
+    '</div>'+legend+
     '<div class="sp-matrix-wrap">'+spBuildMatrix(d.list,d.week,d.lopMode)+'</div>'+
     '<div class="sp-mobile" id="spMobile">'+spBuildMobile(d.list,d.week,d.lopMode)+'</div>';
 };
@@ -9167,7 +9424,7 @@ function spPCard(t,k){
   var tag=/thực hành|đồ án/i.test(raw)?'<span class="sp-tag th">Thực hành</span>':(/lý thuyết/i.test(raw)?'<span class="sp-tag lt">Lý thuyết</span>':'');
   var chips=String(t.lop||'').split(',').map(function(s){return s.trim();}).filter(Boolean).map(function(s){return '<span class="sp-chip">'+escapeHtml(s)+'</span>';}).join('');
   var st;
-  if(k==='OPEN'){ var rest=30-p; st='<div class="sp-status open"><i class="fas fa-circle-check"></i> ĐANG MỞ GHÉP LỚP<small>'+(rest>0?'Còn '+Math.round(rest)+'% tiến độ nữa là đóng ghép':'Sắp đóng ghép')+'</small></div>'; }
+  if(k==='OPEN'){ var rest=30-p; st='<div class="sp-status open"><i class="fas fa-circle-check"></i> ĐANG MỞ GHÉP LỚP<small>'+(rest>0?'Còn '+Math.round(rest)+'% tiến độ nữa là đóng ghép':'Sắp đóng ghép')+'</small></div><button type="button" class="sp-pcard-retake" data-mon="'+escapeHtml(spClean(raw)||raw)+'" data-lop="'+escapeHtml(t.lop||'')+'" onclick="spPrintRetakeForm(this.getAttribute(\'data-mon\'), this.getAttribute(\'data-lop\'))"><i class="fas fa-file-alt"></i> Xem &amp; In Phiếu đăng ký học lại môn này</button>'; }
   else if(k==='CLOSED') st='<div class="sp-status warn"><i class="fas fa-circle-exclamation"></i> ĐÃ ĐÓNG GHÉP – quá 30%</div>';
   else if(k==='DONE')   st='<div class="sp-status closed"><i class="fas fa-lock"></i> ĐÃ CHỐT SỔ</div>';
   else st='<div class="sp-status teach"><i class="fas fa-chalkboard-teacher"></i> ĐANG GIẢNG DẠY</div><div class="sp-extnote">* Muốn học lại/ghép vui lòng liên hệ trực tiếp GV phụ trách.</div>';
@@ -9892,15 +10149,16 @@ function doRefresh(){
   var rs = rows(), st = $('v8stats'); if(!rs.length || !st) return;
   var c = V8.cur, d = c ? c.d : {}, n = rs.length, h = '', ch = '';
   if(V8.type === 'A'){
-    var a=0, v=0, p=0, dirty=0;
+    var a=0, v=0, p=0, dirty=0, lvCnt=0;
     rs.forEach(function(tr){
       var s = rowStatus(tr), m = tr.dataset.mssv, dr = !!d[m];
       tr.classList.toggle('v8-abs', s==='Vắng'); tr.classList.toggle('v8-pm', s==='Phép'); tr.classList.toggle('v8-dirty', dr);
+      if(tr.dataset.haslv === '1') lvCnt++;
       if(dr) dirty++;
       if(s==='Vắng') v++; else if(s==='Phép') p++; else a++;
     });
-    h = '<span class="v8-st">Tổng <b>'+n+'</b></span><span class="v8-st ok">Có mặt <b>'+a+'</b></span><span class="v8-st bad">Vắng <b>'+v+'</b></span><span class="v8-st pm">Phép <b>'+p+'</b></span>';
-    ch = chip('all','Tất cả',n) + chip('abs','Vắng',v) + chip('pm','Phép',p) + chip('dirty','Đã sửa',dirty);
+    h = '<span class="v8-st">Tổng <b>'+n+'</b></span><span class="v8-st ok">Có mặt <b>'+a+'</b></span><span class="v8-st bad">Vắng <b>'+v+'</b></span><span class="v8-st pm">Phép <b>'+p+'</b></span>' + (lvCnt > 0 ? '<span class="v8-st pm" style="border-color:#f59e0b;color:#92400e;">📩 Có đơn <b>'+lvCnt+'</b></span>' : '');
+    ch = chip('all','Tất cả',n) + (lvCnt > 0 ? chip('lv','📩 Có đơn phép',lvCnt) : '') + chip('abs','Vắng',v) + chip('pm','Phép',p) + chip('dirty','Đã sửa',dirty);
     var b = $('btnSaveAttendance');
     if(b) b.innerHTML = '<i class="fas fa-save"></i>&nbsp;GHI NHẬN ĐIỂM DANH <span class="v8-bsum">· Có mặt '+a+' · Vắng '+v+' · Phép '+p+'</span>';
   } else {
@@ -9937,6 +10195,7 @@ function applyFilters(){
       var f = V8.f;
       if(f==='abs') ok = tr.classList.contains('v8-abs');
       else if(f==='pm') ok = tr.classList.contains('v8-pm');
+      else if(f==='lv') ok = (tr.dataset.haslv === '1');
       else if(f==='miss') ok = tr.classList.contains('v8-miss');
       else if(f==='dirty') ok = tr.classList.contains('v8-dirty');
     }
@@ -9977,7 +10236,7 @@ function enhance(){
   var isG = !!tbl.querySelector('input[id^="cc_"]'), isA = !isG && !!tbl.querySelector('input.btn-check');
   if(!isA && !isG){ V8.cur = null; return; }
   V8.type = isG ? 'G' : 'A';
-  if((V8.type==='A' && V8.f==='miss') || (V8.type==='G' && (V8.f==='abs' || V8.f==='pm'))) V8.f = 'all';
+  if((V8.type==='A' && V8.f==='miss') || (V8.type==='G' && (V8.f==='abs' || V8.f==='pm' || V8.f==='lv'))) V8.f = 'all';
   V8.cur = mkCur(V8.type);
   decorate(tbl, isG);
   buildToolbar(host, isG);
@@ -10366,8 +10625,12 @@ function showScheduleResult(res){
  h += '<div class="cf-sum">Có lỗi (' + errs.length + '):</div>';
  errs.forEach(function(e){ h += '<div class="cf-err">' + E(e) + '</div>'; });
  }
+ var missRooms = Array.isArray(res.missingRoomSessions) ? res.missingRoomSessions : [];
+ if (missRooms.length && typeof window.buildMissingRoomsSwalHtml === 'function') {
+  h += window.buildMissingRoomsSwalHtml(missRooms);
+ }
  h += '</div>';
- Swal.fire({ title: 'KẾT QUẢ XẾP LỊCH', html: h, icon: (cf.length || errs.length) ? 'warning' : 'success', width: 720, confirmButtonText: 'Đã hiểu' });
+ Swal.fire({ title: 'KẾT QUẢ XẾP LỊCH', html: h, icon: (cf.length || errs.length || missRooms.length) ? 'warning' : 'success', width: 720, confirmButtonText: 'Đã hiểu' });
 }
 
 function resetSessionRows(keepSet){
@@ -11694,6 +11957,7 @@ var wb = XLSX.utils.book_new();
     return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[đĐ]/g, 'd').toLowerCase().trim();
   }
   function isUnassignedRoomJs(r){
+    if (typeof window.isUnassignedRoomGlobal === 'function') return window.isUnassignedRoomGlobal(r);
     var c = cleanKey(r);
     return !c || c === 'CHƯA XẾP' || c === 'CHƯA XẾP PHÒNG' || c === 'CHUA XEP' || c === 'CHUA XEP PHONG';
   }
@@ -12123,6 +12387,49 @@ var wb = XLSX.utils.book_new();
     };
   }
 
+  function renderStsPlanRows(){
+    var tbody = document.getElementById('stsPreviewBody');
+    if (tbody) {
+      tbody.innerHTML = stsState.plan.map(function(p, i){
+        var isEmp = isUnassignedRoomJs(p.phong);
+        return '<tr>' +
+          '<td class="text-nowrap"><b>' + escT(p.ngayVN) + '</b></td>' +
+          '<td class="text-nowrap">' + escT(p.ca) + '</td>' +
+          '<td><span class="badge bg-primary-subtle text-primary">' + escT(p.lop) + '</span></td>' +
+          '<td>' + escT(p.mon) + '</td>' +
+          '<td><input type="text" class="form-control form-control-sm sts-plan-room' + (isEmp ? ' is-empty-room' : '') + '" data-idx="' + i + '" value="' + escT(p.phong || '') + '" placeholder="Chưa điền phòng" oninput="stsOnPlanRoomInput(this)">' +
+            '<span class="sts-room-warn-tag" style="display:' + (isEmp ? 'inline-block' : 'none') + ';"><i class="fas fa-exclamation-circle"></i> Chưa điền phòng</span></td>' +
+          '<td><button type="button" class="btn btn-sm btn-outline-danger py-0" onclick="stsRemovePlanItem(' + i + ')"><i class="fas fa-times"></i></button></td>' +
+        '</tr>';
+      }).join('');
+    }
+    updateStsMissingRoomSummary();
+  }
+
+  function updateStsMissingRoomSummary(){
+    var warnEl = document.getElementById('stsPreviewMissingRoomWarn');
+    if (!warnEl) return;
+    var missCnt = stsState.plan.filter(function(p){ return isUnassignedRoomJs(p.phong); }).length;
+    if (missCnt > 0) {
+      warnEl.style.display = 'block';
+      warnEl.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i>BÁO ĐỘNG: Có <b>' + missCnt + '</b> buổi đang để trống phòng (viền đỏ bên dưới) — nên điền luôn hoặc bổ sung sau khi lưu!';
+    } else {
+      warnEl.style.display = 'none';
+      warnEl.innerHTML = '';
+    }
+  }
+
+  window.stsOnPlanRoomInput = function(inp){
+    var idx = parseInt(inp.getAttribute('data-idx'), 10);
+    var val = inp.value.trim();
+    if (!isNaN(idx) && stsState.plan[idx]) stsState.plan[idx].phong = val;
+    var isEmp = isUnassignedRoomJs(val);
+    inp.classList.toggle('is-empty-room', isEmp);
+    var w = inp.nextElementSibling;
+    if (w && w.classList.contains('sts-room-warn-tag')) w.style.display = isEmp ? 'inline-block' : 'none';
+    updateStsMissingRoomSummary();
+  };
+
   function renderPreviewResult(res){
     stsState.plan = res.plan || [];
     stsState.deleteItems = res.toDelete || [];
@@ -12133,6 +12440,7 @@ var wb = XLSX.utils.book_new();
       'Đã xếp được <b>' + (st.scheduledCount || 0) + '/' + (st.totalRequested || 0) + '</b> buổi rảnh' +
       (st.deleteCount ? (' — <span class="text-danger">Sẽ xóa <b>' + st.deleteCount + '</b> buổi ngoài khung rảnh</span>') : '') +
       (st.unplacedCount ? (' — <span class="text-warning text-dark">' + st.unplacedCount + ' buổi chưa xếp được</span>') : '') +
+      '<div id="stsPreviewMissingRoomWarn" class="mt-1 text-danger fw-bold" style="display:none;"></div>' +
       '</div>';
     var delHtml = '';
     if (stsState.deleteItems.length > 0) {
@@ -12144,16 +12452,7 @@ var wb = XLSX.utils.book_new();
         keptProt.map(function(k){ return '• ' + escT(k.ngayVN + ' · ' + k.ca + ' — ' + k.mon + ' (' + k.reason + ')'); }).join('<br>') + '</div>';
     }
     document.getElementById('stsDeleteBox').innerHTML = delHtml;
-    document.getElementById('stsPreviewBody').innerHTML = stsState.plan.map(function(p, i){
-      return '<tr>' +
-        '<td><b>' + escT(p.ngayVN) + '</b></td>' +
-        '<td>' + escT(p.ca) + '</td>' +
-        '<td><span class="badge bg-primary-subtle text-primary">' + escT(p.lop) + '</span></td>' +
-        '<td>' + escT(p.mon) + '</td>' +
-        '<td><input type="text" class="form-control form-control-sm sts-plan-room" data-idx="' + i + '" value="' + escT(p.phong || '') + '" placeholder="Chưa xếp"></td>' +
-        '<td><button type="button" class="btn btn-sm btn-outline-danger py-0" onclick="stsRemovePlanItem(' + i + ')"><i class="fas fa-times"></i></button></td>' +
-      '</tr>';
-    }).join('');
+    renderStsPlanRows();
 
     var unp = res.unplaced || [];
     document.getElementById('stsUnplacedBox').innerHTML = unp.length
@@ -12225,10 +12524,12 @@ var wb = XLSX.utils.book_new();
   };
 
   window.stsRemovePlanItem = function(idx){
+    document.querySelectorAll('.sts-plan-room').forEach(function(inp){
+      var i = parseInt(inp.getAttribute('data-idx'), 10);
+      if (!isNaN(i) && stsState.plan[i]) stsState.plan[i].phong = inp.value.trim();
+    });
     stsState.plan.splice(idx, 1);
-    document.getElementById('stsPreviewBody').innerHTML = stsState.plan.map(function(p, i){
-      return '<tr><td><b>' + escT(p.ngayVN) + '</b></td><td>' + escT(p.ca) + '</td><td><span class="badge bg-primary-subtle text-primary">' + escT(p.lop) + '</span></td><td>' + escT(p.mon) + '</td><td><input type="text" class="form-control form-control-sm sts-plan-room" data-idx="' + i + '" value="' + escT(p.phong || '') + '"></td><td><button type="button" class="btn btn-sm btn-outline-danger py-0" onclick="stsRemovePlanItem(' + i + ')"><i class="fas fa-times"></i></button></td></tr>';
-    }).join('');
+    renderStsPlanRows();
     document.getElementById('btnSaveSmartTeacher').disabled = (stsState.plan.length === 0 && stsState.deleteItems.length === 0);
   };
 
@@ -12247,7 +12548,15 @@ var wb = XLSX.utils.book_new();
           var errNote = (Array.isArray(res.errors) && res.errors.length)
             ? '<div class="alert alert-warning text-start small mt-2 mb-0"><b>Các buổi bị bỏ qua do trùng:</b><br>• ' + res.errors.map(escT).join('<br>• ') + '</div>'
             : '';
-          Swal.fire({ title: 'Thành công!', html: '<div class="text-start small">' + escT(res.message) + '</div>' + errNote, icon: 'success' });
+          var missListSts = Array.isArray(res.missingRoomSessions) ? res.missingRoomSessions : [];
+          var missNote = (missListSts.length && typeof window.buildMissingRoomsSwalHtml === 'function')
+            ? window.buildMissingRoomsSwalHtml(missListSts)
+            : '';
+          Swal.fire({
+            title: missListSts.length ? 'Đã lưu (Cảnh báo thiếu phòng!)' : 'Thành công!',
+            html: '<div class="text-start small">' + escT(res.message) + '</div>' + errNote + missNote,
+            icon: missListSts.length ? 'warning' : 'success'
+          });
 
           // Cập nhật giao diện modal TỨC THÌ từ bundle trả về trong cùng response (0 request thêm!)
           if (res.bundle && res.bundle.success) {
@@ -12257,10 +12566,10 @@ var wb = XLSX.utils.book_new();
             window.loadSmartTeacherOptions(true);
           }
 
-          // Chỉ làm mới đúng bảng TKB nếu đang mở tab TKB, KHÔNG bắn 3 request nặng chồng nhau!
+          // Chỉ làm mới đúng bảng TKB nếu đang mở tab TKB (gọi không truyền true để KHÔNG bị chặn khi modal/Swal đang mở!)
           var tkbArea = document.getElementById('tkbArea');
           if (tkbArea && tkbArea.style.display !== 'none' && typeof loadAdminTimetableMatrix === 'function') {
-            loadAdminTimetableMatrix(true);
+            loadAdminTimetableMatrix();
           }
           // Đánh dấu Admin Dashboard cần làm mới khi quay lại tab Quản trị Khoa
           var admArea = document.getElementById('adminArea');
@@ -12778,5 +13087,1080 @@ var wb = XLSX.utils.book_new();
   }
 })();
 </script>
+<!-- MODAL SINH VIÊN GỬI ĐƠN XIN PHÉP VẮNG -->
+<div class="modal fade" id="spLeaveModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+      <div class="modal-header text-white" style="background: linear-gradient(135deg, #1d4ed8, #2563eb); border-radius: 16px 16px 0 0;">
+        <div>
+          <h5 class="modal-title fw-bold mb-0"><i class="fas fa-file-signature me-2"></i>Xin Phép Vắng Buổi Học</h5>
+          <small class="opacity-90">In mẫu đơn → Viết tay &amp; ký tên → Chụp ảnh nộp ngay vào buổi vắng</small>
+        </div>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
+      </div>
+      <div class="modal-body p-3">
+        <div id="spLvSessionCard" class="p-3 rounded mb-3" style="background:#eff6ff;border:1px solid #bfdbfe;font-size:.86rem;"></div>
+        <div id="spLvExistingBox" class="mb-3" style="display:none;"></div>
+
+        <div class="p-3 rounded mb-3" style="background:#f8fafc;border:1px solid #e2e8f0;">
+          <div class="fw-bold text-primary small mb-1"><i class="fas fa-print me-1"></i>Bước 1: Tải / In mẫu gốc ĐƠN XIN PHÉP NGHỈ HỌC của Trường</div>
+          <div class="small text-muted mb-2">Giữ nguyên 100% mẫu nhà trường ban hành (1 tờ A4 gồm 2 phiếu). In ra giấy, <b>viết tay đầy đủ &amp; ký tên</b> rồi chụp ảnh nộp ở Bước 3.</div>
+          <div class="d-flex flex-wrap gap-2 align-items-center">
+            <button type="button" class="btn btn-primary btn-sm fw-bold" onclick="spDownloadLeaveWord()"><i class="fas fa-file-word me-1"></i>Tải mẫu gốc của Trường (.doc)</button>
+            <button type="button" class="btn btn-outline-primary btn-sm fw-bold" onclick="spPrintLeaveForm(false)"><i class="fas fa-print me-1"></i>Xem &amp; In mẫu gốc (A4 - 2 phiếu/trang)</button>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-bold small mb-1">Bước 2: Lý do xin phép nghỉ học <span class="text-danger">*</span></label>
+          <textarea id="spLvReasonInp" class="form-control" rows="2" placeholder="VD: Em bị sốt/ốm cần nghỉ khám bệnh, hoặc có việc gia đình đột xuất..."></textarea>
+        </div>
+
+        <div class="mb-2">
+          <label class="form-label fw-bold small mb-1">Bước 3: Chụp ảnh / Tải ảnh Đơn xin phép đã viết tay &amp; ký tên <span class="text-danger">*</span></label>
+          <input type="file" id="spLvFileInp" class="form-control form-control-sm" accept="image/*,.pdf" onchange="spOnLeaveFilePicked(this)">
+          <div class="form-text small">Hỗ trợ chụp trực tiếp bằng điện thoại (JPG/PNG) hoặc file PDF. Ảnh sẽ tự động tối ưu dung lượng để tải lên nhanh.</div>
+          <div id="spLvFilePreview" class="lv-preview-box mt-2" style="display:none;"></div>
+        </div>
+      </div>
+      <div class="modal-footer bg-light d-flex justify-content-between">
+        <span class="small text-muted"><i class="fas fa-shield-alt text-success me-1"></i>Đơn gửi tới Giảng viên dạy môn này · Khi điểm danh GV tích Phép sẽ tự duyệt.</span>
+        <div class="d-flex gap-2">
+          <button type="button" class="btn btn-secondary btn-sm px-3" data-bs-dismiss="modal">Đóng</button>
+          <button type="button" class="btn btn-primary btn-sm fw-bold px-4" id="btnSpSubmitLeave" onclick="spSubmitLeaveRequestWeb()">
+            <i class="fas fa-paper-plane me-1"></i>Gửi Đơn Xin Phép
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL LỊCH SỬ ĐƠN XIN PHÉP CỦA SINH VIÊN -->
+<div class="modal fade" id="spLeaveHistoryModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+      <div class="modal-header bg-primary text-white" style="border-radius: 16px 16px 0 0;">
+        <h5 class="modal-title fw-bold mb-0"><i class="fas fa-folder-open me-2"></i>Đơn Xin Phép Vắng Đã Gửi</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
+      </div>
+      <div class="modal-body p-3" id="spLeaveHistoryBody"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL QUẢN LÝ & DUYỆT ĐƠN XIN PHÉP (GIẢNG VIÊN & ADMIN) -->
+<div class="modal fade" id="staffLeaveModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+      <div class="modal-header text-white" style="background: linear-gradient(135deg, #d97706, #ea580c); border-radius: 16px 16px 0 0;">
+        <div>
+          <h5 class="modal-title fw-bold mb-0"><i class="fas fa-envelope-open-text me-2"></i>Đơn Xin Phép Vắng — Lớp Bạn Giảng Dạy</h5>
+          <small class="opacity-90">Xem ảnh đơn viết tay · Khi Điểm danh chọn <b>Phép</b> hệ thống tự động duyệt, để <b>Vắng</b> là không duyệt</small>
+        </div>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
+      </div>
+      <div class="modal-body p-3">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+          <div class="btn-group btn-group-sm" role="group">
+            <button type="button" class="btn btn-warning fw-bold" id="btnSlFltPending" onclick="loadStaffLeaveRequests('CHO_DUYET')">Chờ duyệt</button>
+            <button type="button" class="btn btn-outline-success fw-bold" id="btnSlFltApproved" onclick="loadStaffLeaveRequests('DA_DUYET')">Đã duyệt</button>
+            <button type="button" class="btn btn-outline-danger fw-bold" id="btnSlFltRejected" onclick="loadStaffLeaveRequests('TU_CHOI')">Từ chối</button>
+            <button type="button" class="btn btn-outline-secondary fw-bold" id="btnSlFltAll" onclick="loadStaffLeaveRequests('ALL')">Tất cả</button>
+          </div>
+          <button type="button" class="btn btn-outline-primary btn-sm fw-bold" onclick="loadStaffLeaveRequests()"><i class="fas fa-sync-alt me-1"></i>Làm mới</button>
+        </div>
+        <div id="staffLeaveListBody">
+          <div class="text-center py-4 text-muted"><i class="fas fa-spinner fa-spin me-2"></i>Đang tải danh sách đơn xin phép...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===== MODULE XIN PHÉP VẮNG (GV DUYỆT QUA ĐIỂM DANH) & MẪU ĐƠN GỐC NHÀ TRƯỜNG (ROUND 10) ===== */
+(function(){
+  window.__spLeaveMap = {};
+  window.__spStudentClass = '';
+  window.__spStudentName = '';
+  window.__spCurrentLeaveTarget = null;
+  window.__spLeaveFilePayload = null;
+  var staffLeaveState = { filter: 'CHO_DUYET', items: [] };
+
+  // NGUYÊN BẢN 100% 2 FILE MẪU NHÀ TRƯỜNG BAN HÀNH (BYTE-FOR-BYTE)
+  var ORIG_DON_XIN_PHEP_DOC_B64 = "0M8R4KGxGuEAAAAAAAAAAAAAAAAAAAAAPgADAP7/CQAGAAAAAAAAAAAAAAABAAAAOgAAAAAAAAAAEAAAPAAAAAEAAAD+////AAAAADkAAAD////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////spcEATQAJBAAA8BK/AAAAAAAAEAAAAAAACAAAEhoAAA4AYmpiaqQhpCEAAAAAAAAAAAAAAAAAAAAAAAAJBBYAOCAAAMZLR2nGS0dpEwAAAAAAAAANAAAAAAAAAAAAAAAAAAAA4wMAAAAAAAD//w8AAAAAAAAAAAD//w8AAAAAAAAAAAD//w8AAAAAAAAAAAAAAAAAAAAAALcAAAAAAGwIAAAAAAAAbAgAAP4VAAAAAAAA/hUAAAAAAAByFgAAAAAAAHIWAAAAAAAAchYAABQAAAAAAAAAAAAAAP////8AAAAAhhYAAAAAAACGFgAAAAAAAIYWAAA4AAAAvhYAABwAAADaFgAAJAAAAIYWAAAAAAAAABsAAHQBAAD+FgAAAAAAAP4WAAAAAAAA/hYAAAAAAAD+FgAAAAAAAP4WAAAAAAAAfxkAAAAAAAB/GQAAAAAAAH8ZAAAAAAAAcxoAAAIAAAB1GgAAAAAAAHUaAAAAAAAAdRoAAAAAAAB1GgAAAAAAAHUaAAAAAAAAdRoAACQAAAB0HAAAtgIAACofAAA+AAAAmRoAACEAAAAAAAAAAAAAAAAAAAAAAAAAchYAAAAAAAB/GQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAhGQAAXgAAAH8ZAAAAAAAAfxkAAAAAAAB/GQAAAAAAAJkaAAAAAAAAAAAAAAAAAAD+FQAAAAAAAP4VAAAAAAAA/hYAAAAAAAAAAAAAAAAAAP4WAAAjAgAAuhoAABYAAAAXGgAAAAAAABcaAAAAAAAAFxoAAAAAAAB/GQAAFgAAAP4VAABSAAAA/hYAAAAAAAByFgAAAAAAAP4WAAAAAAAAcxoAAAAAAAAAAAAAAAAAABcaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAfxkAAAAAAABzGgAAAAAAAAAAAAAAAAAAFxoAAAAAAAAAAAAAAAAAABcaAAAAAAAAUBYAACIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFxoAAAAAAAD+FgAAAAAAAP////8AAAAAsEcCmsPM2QEAAAAAAAAAAP////8AAAAAlRkAAAAAAAAXGgAAAAAAAAAAAAAAAAAAXxoAABQAAADQGgAAMAAAAAAbAAAAAAAAFxoAAAAAAABoHwAAAAAAAJUZAACCAAAAaB8AAAAAAAAXGgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGgfAAAAAAAAAAAAAAAAAAByFgAAAAAAABcaAABIAAAAfxkAAAAAAAB/GQAAAAAAABcaAAAAAAAAfxkAAAAAAAB/GQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAfxkAAAAAAAB/GQAAAAAAAH8ZAAAAAAAAmRoAAAAAAACZGgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFxoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH8ZAAAAAAAAfxkAAAAAAAB/GQAAAAAAAAAbAAAAAAAAfxkAAAAAAAB/GQAAAAAAAH8ZAAAAAAAAfxkAAAAAAAAAAAAAAAAAAP////8AAAAA/////wAAAAD/////AAAAAAAAAAAAAAAA/////wAAAAD/////AAAAAP////8AAAAA/////wAAAAD/////AAAAAP////8AAAAA/////wAAAAD/////AAAAAP////8AAAAA/////wAAAAD/////AAAAAP////8AAAAA/////wAAAAD/////AAAAAGgfAAAAAAAAfxkAAAAAAAB/GQAAAAAAAH8ZAAAAAAAAfxkAAAAAAAB/GQAAAAAAAH8ZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB/GQAAAAAAAH8ZAAAAAAAAfxkAAAAAAABsCAAAWAwAAMQUAAA6AQAABQASAQAACQQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgADQANAA0ADQANAA0ADQANAA0ADQANAA0ADQANAAgADQAIAA0AAwANAA0ABAANAA0AAwANAA0ABAANAA0ADQBDANgeTgBHACAASABPAMAAIABYAMMAIABIANgeSQAgAEMASADmHiAATgBHAEgAKAFBACAAVgBJAMYeVAAgAE4AQQBNAA0AEAHZHmMAIABsAK0ecAAgABMgIABUAPEeIABkAG8AIAATICAASAChHm4AaAAgAFAAaAD6AGMADQAQAaABTgAgAFgASQBOACAAUABIAMkAUAAgAE4ARwBIAMgeIABIAMweQwANAEsA7QBuAGgAIABnAO0eaQA6AAkALQAgAEIAYQBuACAAZwBpAOEAbQAgAGgAaQDHHnUAIAB0AHIAsAHdHm4AZwAgAEMAYQBvACAAEAGzHm4AZwAgABABoR5pACAAVgBpAMcedAAgABAB4AAgAE4AtR5uAGcADQAJAAkALQAgAFAAaADyAG4AZwAgABAB4ABvACAAdAChHm8AIAB2AOAAIABDAFQAUwBWAA0ACQAJAC0AIABHAGkA4QBvACAAdgBpAOoAbgAgAEIA2R4gAG0A9ABuACwAIABHAGkA4QBvACAAdgBpAOoAbgAgAGMAaADnHiAAbgBoAGkAxx5tAA0ARQBtACAAdADqAG4AIABsAOAAOgAJAA0ASADNHmMAIABsANsecAA6AAkADQBFAG0AIAB2AGkAvx50ACAAEQGhAW4AIABuAOAAeQAgABEBwx4gAHgAaQBuACAAcABoAOkAcAAgABEBsAHjHmMAIABuAGcAaADJHiAAaADNHmMAIAB0AOseIABuAGcA4AB5AAkALgARAb8ebgAgAG4AZwDgAHkACQANAEwA/QAgAGQAbwA6AAkADQAJAA0ASwDtAG4AaAAgAG0AbwBuAGcAIABjAOEAYwAgAHQAaACnHnkAIABjAPQAIAB4AGUAbQAgAHgA6QB0ACwAIABnAGkA+gBwACAAEQHhHiAAZQBtAC4AIABFAG0AIAB4AGkAbgAgAGgA6R5hACAAcwC9HiAAaADNHmMAIABiAOAAaQAgAHYA4AAgAGwA4ABtACAAYgDgAGkAIAARAaceeQAgABEB5x4uAA0ARQBtACAAeABpAG4AIABjAGgA4gBuACAAdABoAOAAbgBoACAAYwCjHm0AIAChAW4AIQANABAB4AAgAE4AtR5uAGcALAAgAG4AZwDgAHkAJiAmIHQAaADhAG4AZwAmIC4ALgBuAAMBbQAgADIAMAAmIA0AIAAgACAAIABQAEgA0gBOAEcAIAAQAcAATwAgAFQAoB5PAAkACQAJAEcAVgBDAE4ACQAJAAkACQAJAE4ARwCvAdweSQAgAFYASQC+HlQAIAAQAaAB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AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB4GFAASAAEAeAEPAAcAAwADAAMAAAAEAAgAAACYAAAAngAAAJ4AAACeAAAAngAAAJ4AAACeAAAAngAAAJ4AAAA2BgAANgYAADYGAAA2BgAANgYAADYGAAA2BgAANgYAADYGAAB2AgAAdgIAAHYCAAB2AgAAdgIAAHYCAAB2AgAAdgIAAHYCAAA2BgAANgYAADYGAAA2BgAANgYAADYGAAA+AgAANgYAADYGAAA2BgAANgYAADYGAAA2BgAANgYAADYGAAA2BgAANgYAADYGAAA2BgAANgYAADYGAAA2BgAANgYAADYGAAA2BgAANgYAADYGAAA2BgAANgYAADYGAAA2BgAANgYAADYGAAA2BgAAqAAAADYGAAA2BgAAFgAAADYGAAA2BgAANgYAADYGAAA2BgAANgYAADYGAAA2BgAAuAAAADYGAAA2BgAANgYAADYGAAA2BgAANgYAADYGAAA2BgAANgYAADYGAAA2BgAANgYAAGgBAABIAQAANgYAADYGAAA2BgAANgYAADYGAAA2BgAANgYAADYGAAA2BgAANgYAADYGAAA2BgAANgYAADYGAAA2BgAANgYAADYGAAA2BgAANgYAADYGAAA2BgAANgYAADYGAAA2BgAANgYAADYGAAA2BgAANgYAADYGAAA2BgAANgYAADYGAAA2BgAANgYAADYGAAA2BgAANgYAADYGAAA2BgAANgYAADYGAAA2BgAANgYAADYGAAA2BgAANgYAADYGAAA2BgAANgYAADYGAAA2BgAANgYAADYGAAA2BgAANgYAADYGAAA2BgAANgYAADYGAAA2BgAANgYAADYGAAA2BgAANgYAADYGAACwAwAANgYAADIGAAAYAAAAwAMAANADAADgAwAA8AMAAAAEAAAQBAAAIAQAADAEAABABAAAUAQAAGAEAABwBAAAgAQAAJAEAADAAwAA0AMAAOADAADwAwAAAAQAABAEAAAyBgAAKAIAANgBAADoAQAAIAQAADAEAABABAAAUAQAAGAEAABwBAAAgAQAAJAEAADAAwAA0AMAAOADAADwAwAAAAQAABAEAAAgBAAAMAQAAEAEAABQBAAAYAQAAHAEAACABAAAkAQAAMADAADQAwAA4AMAAPADAAAABAAAEAQAACAEAAAwBAAAQAQAAFAEAABgBAAAcAQAAIAEAACQBAAAwAMAANADAADgAwAA8AMAAAAEAAAQBAAAIAQAADAEAABABAAAUAQAAGAEAABwBAAAgAQAAJAEAADAAwAA0AMAAOADAADwAwAAAAQAABAEAAAgBAAAMAQAAEAEAABQBAAAYAQAAHAEAACABAAAkAQAAMADAADQAwAA4AMAAPADAAAABAAAEAQAACAEAAAwBAAAQAQAAFAEAABgBAAAcAQAAIAEAACQBAAAOAEAAFgBAAD4AQAACAIAABgCAABWAgAAfgIAAJACAACgAgAAsAIAAMACAADQAgAAgAIAAOACAADwAgAAAAMAABADAAAgAwAAMAMAAEADAADgAgAA8AIAAAADAAAQAwAAIAMAADADAABAAwAA4AIAAPACAAAAAwAAEAMAACADAAAwAwAAQAMAAOACAADwAgAAAAMAABADAAAgAwAAMAMAAEADAADgAgAA8AIAAAADAAAQAwAAIAMAADADAABAAwAA4AIAAPACAAAAAwAAEAMAACADAAAwAwAAQAMAAOACAADwAgAAAAMAABADAAAgAwAAMAMAAEADAADgAgAA8AIAAAADAAAQAwAAIAMAADADAABAAwAA4AIAAPACAAAAAwAAEAMAACADAAAwAwAAQAMAAOACAADwAgAAAAMAABADAAAgAwAAMAMAAEADAADgAgAA8AIAAAADAAAQAwAAIAMAADADAABAAwAA4AIAAPACAAAAAwAAEAMAACADAAAwAwAAQAMAAOACAADwAgAAAAMAABADAAAgAwAAMAMAAEADAADgAgAA8AIAAAADAAAQAwAAIAMAADADAABAAwAANgYAADYGAAA2BgAANgYAADYGAAAgAAAAT0oDAFBKAwBRSgMAX0gBBG1ICQRuSAkEc0gJBHRICQQAAAAASgAAYPH/AgBKAAwQAACdP4MAAAAGAE4AbwByAG0AYQBsAAAADAAAABJkFAEBABSkyAAYAENKFgBfSAEEYUoWAG1ICQRzSAkEdEgJBAAAAAAAAAAAAAAAAAAAAAAAAEQAQSDy/6EARAAMDQAAAAAAABAAFgBEAGUAZgBhAHUAbAB0ACAAUABhAHIAYQBnAHIAYQBwAGgAIABGAG8AbgB0AAAAAABSAGkA8/+zAFIADB0AAAAAAAAwBgwAVABhAGIAbABlACAATgBvAHIAbQBhAGwAAAAcABf2AwAANNYGAAEKA2wANNYGAAEFAwAAYfYDAAACAAsAAAAoAGsg9P/BACgAAA0AAAAAAAAwBgcATgBvACAATABpAHMAdAAAAAIADAAAAAAARACzAAEA8gBEAAwUAABlK78AIAIOAEwAaQBzAHQAIABQAGEAcgBhAGcAcgBhAHAAaAAAAA0ADwAPhNACXoTQAm0kAQAAAD4AHwABAAIBPgAMDREAegBVADAGBgBIAGUAYQBkAGUAcgAAABcAEAANxggAAkgSkCQBAhJk8AAB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AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP7/AAAKAAIAAAAAAAAAAAAAAAAAAAAAAAEAAAAC1c3VnC4bEJOXCAArLPmuMAAAAOgAAAAMAAAAAQAAAGgAAAAPAAAAcAAAAAUAAAB8AAAABgAAAIQAAAARAAAAjAAAABcAAACUAAAACwAAAJwAAAAQAAAApAAAABMAAACsAAAAFgAAALQAAAANAAAAvAAAAAwAAADJAAAAAgAAAOQEAAAeAAAABAAAAAAAAAADAAAAAQAAAAMAAAABAAAAAwAAABIAAAADAAAAAAAQAAsAAAAAAAAACwAAAAAAAAALAAAAAAAAAAsAAAAAAAAAHhAAAAEAAAABAAAAAAwQAAACAAAAHgAAAAYAAABUaXRsZQADAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAgAAAAMAAAAEAAAABQAAAAYAAAAHAAAACAAAAAkAAAAKAAAACwAAAAwAAAANAAAADgAAAA8AAAAQAAAA/v///xIAAAATAAAAFAAAABUAAAAWAAAAFwAAABgAAAD+////GgAAABsAAAAcAAAAHQAAAB4AAAAfAAAAIAAAACEAAAAiAAAAIwAAACQAAAAlAAAAJgAAACcAAAAoAAAA/v///yoAAAArAAAALAAAAC0AAAAuAAAALwAAADAAAAD+////MgAAADMAAAA0AAAANQAAADYAAAA3AAAAOAAAAP7////9////OwAAAP7////+/////v///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////1IAbwBvAHQAIABFAG4AdAByAHkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWAAUB//////////8DAAAABgkCAAAAAADAAAAAAAAARgAAAAAAAAAAAAAAADCAA5rDzNkBPQAAAIAAAAAAAAAARABhAHQAYQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAoAAgH///////////////8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAARAAAAABAAAAAAAAAxAFQAYQBiAGwAZQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADgACAQEAAAAGAAAA/////wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABkAAABoHwAAAAAAAFcAbwByAGQARABvAGMAdQBtAGUAbgB0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaAAIBAgAAAAUAAAD/////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADggAAAAAAAABQBTAHUAbQBtAGEAcgB5AEkAbgBmAG8AcgBtAGEAdABpAG8AbgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACgAAgH///////////////8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAApAAAAABAAAAAAAAAFAEQAbwBjAHUAbQBlAG4AdABTAHUAbQBtAGEAcgB5AEkAbgBmAG8AcgBtAGEAdABpAG8AbgAAAAAAAAAAAAAAOAACAQQAAAD//////////wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADEAAAAAEAAAAAAAAAEAQwBvAG0AcABPAGIAagAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAASAAIA////////////////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD///////////////8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAA/v///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////wEA/v8DCgAA/////wYJAgAAAAAAwAAAAAAAAEYgAAAATWljcm9zb2Z0IFdvcmQgOTctMjAwMyBEb2N1bWVudAAKAAAATVNXb3JkRG9jABAAAABXb3JkLkRvY3VtZW50LjgA9DmycQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+  var ORIG_PHIEU_HOC_LAI_DOCX_B64 = "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";
+
+  function escL(s){
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+  function cleanKeyL(s){
+    return String(s == null ? '' : s).replace(/\s+/g, ' ').trim().toUpperCase();
+  }
+  function fmtDateVNL(iso){
+    var p = String(iso || '').split('-');
+    return p.length === 3 ? (p[2] + '/' + p[1] + '/' + p[0]) : String(iso || '');
+  }
+  function drivePreviewUrl_(url){
+    var s = String(url || '');
+    var m = s.match(/\/d\/([a-zA-Z0-9_-]+)/) || s.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+    if (m && m[1]) return 'https://lh3.googleusercontent.com/d/' + m[1] + '=w1200';
+    return s;
+  }
+  function downloadBase64File_(b64, mime, filename){
+    var bin = atob(b64);
+    var len = bin.length;
+    var bytes = new Uint8Array(len);
+    for (var i = 0; i < len; i++) bytes[i] = bin.charCodeAt(i);
+    var blob = new Blob([bytes], { type: mime });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function(){ document.body.removeChild(a); URL.revokeObjectURL(url); }, 800);
+  }
+
+  window.spGetLeaveItem = function(ngayIso, ca, mon){
+    var k = String(ngayIso || '') + '|' + cleanKeyL(ca) + '|' + cleanKeyL(mon);
+    return (window.__spLeaveMap && window.__spLeaveMap[k]) ? window.__spLeaveMap[k] : null;
+  };
+
+  window.spBuildLeaveBarHtml = function(it, lopMode){
+    if (lopMode) return '';
+    var mssv = ((document.getElementById('studentSearchMssvInput') || {}).value || '').replace(/\s+/g, '');
+    if (!mssv) return '';
+    var lv = window.spGetLeaveItem(it.ngayIso, it.ca, it.mon);
+    var attrs = ' data-ngay="' + escL(it.ngayIso || '') + '" data-ca="' + escL(it.ca || '') +
+      '" data-mon="' + escL(it.mon || '') + '" data-lop="' + escL(it.lop || '') +
+      '" data-gv="' + escL(it.gvName || it.gvId || '') + '" ';
+    if (!lv) {
+      return '<div class="sp-lv-bar"><button type="button" class="sp-lv-btn"' + attrs + 'onclick="spOpenLeaveModalFromEl(this)"><i class="fas fa-file-signature"></i> Xin phép vắng</button></div>';
+    }
+    if (lv.trangThai === 'DA_DUYET') {
+      return '<div class="sp-lv-bar"><button type="button" class="sp-lv-btn approved"' + attrs + 'onclick="spOpenLeaveModalFromEl(this)"><i class="fas fa-check-circle"></i> Đã duyệt PHÉP · Xem đơn</button></div>';
+    }
+    if (lv.trangThai === 'TU_CHOI') {
+      return '<div class="sp-lv-bar"><button type="button" class="sp-lv-btn rejected"' + attrs + 'onclick="spOpenLeaveModalFromEl(this)"><i class="fas fa-times-circle"></i> Không duyệt (Vắng) · Gửi lại</button></div>';
+    }
+    if (lv.trangThai === 'CO_MAT') {
+      return '<div class="sp-lv-bar"><button type="button" class="sp-lv-btn approved"' + attrs + 'onclick="spOpenLeaveModalFromEl(this)"><i class="fas fa-user-check"></i> Đã đi học (Có mặt) · Xem đơn</button></div>';
+    }
+    return '<div class="sp-lv-bar"><button type="button" class="sp-lv-btn pending"' + attrs + 'onclick="spOpenLeaveModalFromEl(this)"><i class="fas fa-hourglass-half"></i> Đã gửi đơn (Chờ GV điểm danh)</button></div>';
+  };
+
+  window.spOpenLeaveModalFromEl = function(el){
+    var mssv = ((document.getElementById('studentSearchMssvInput') || {}).value || '').replace(/\s+/g, '');
+    if (!mssv) return Swal.fire('Lưu ý', 'Vui lòng nhập MSSV và tìm lịch cá nhân trước khi gửi đơn xin phép!', 'warning');
+    var target = {
+      mssv: mssv,
+      hoTen: window.__spStudentName || ((document.getElementById('studentWelcomeText') || {}).textContent || '').replace(/^Xin chào:\s*/, '').trim(),
+      lopGoc: window.__spStudentClass || '',
+      ngayIso: el.getAttribute('data-ngay') || '',
+      ca: el.getAttribute('data-ca') || '',
+      mon: el.getAttribute('data-mon') || '',
+      lopTkb: el.getAttribute('data-lop') || '',
+      gvName: el.getAttribute('data-gv') || ''
+    };
+    window.__spCurrentLeaveTarget = target;
+    window.__spLeaveFilePayload = null;
+
+    var card = document.getElementById('spLvSessionCard');
+    if (card) {
+      card.innerHTML =
+        '<div class="fw-bold text-primary mb-1"><i class="fas fa-calendar-check me-1"></i>' + escL(target.mon) + '</div>' +
+        '<div><b>Buổi xin nghỉ:</b> ' + escL(fmtDateVNL(target.ngayIso)) + ' · <span class="badge bg-primary">' + escL(target.ca) + '</span>' +
+        (target.gvName ? (' · <b>GV:</b> ' + escL(target.gvName)) : '') + '</div>' +
+        '<div class="small text-secondary mt-1"><b>Sinh viên:</b> ' + escL(target.hoTen) + ' (MSSV: <b>' + escL(target.mssv) + '</b>' + (target.lopGoc ? (' · Lớp: ' + escL(target.lopGoc)) : '') + ')</div>';
+    }
+
+    var lv = window.spGetLeaveItem(target.ngayIso, target.ca, target.mon);
+    var exBox = document.getElementById('spLvExistingBox');
+    var reasonInp = document.getElementById('spLvReasonInp');
+    var fileInp = document.getElementById('spLvFileInp');
+    var prevBox = document.getElementById('spLvFilePreview');
+    var submitBtn = document.getElementById('btnSpSubmitLeave');
+    if (fileInp) fileInp.value = '';
+    if (prevBox) { prevBox.style.display = 'none'; prevBox.innerHTML = ''; }
+    if (reasonInp) reasonInp.value = lv ? (lv.lyDo || '') : '';
+
+    if (lv && exBox) {
+      var stBadge = lv.trangThai === 'DA_DUYET'
+        ? '<span class="badge bg-success">✅ ĐÃ DUYỆT PHÉP</span>'
+        : (lv.trangThai === 'TU_CHOI'
+          ? '<span class="badge bg-danger">❌ KHÔNG DUYỆT (VẮNG)</span>'
+          : (lv.trangThai === 'CO_MAT'
+            ? '<span class="badge bg-info text-dark">🟢 ĐÃ ĐI HỌC (CÓ MẶT)</span>'
+            : '<span class="badge bg-warning text-dark">⏳ CHỜ GV ĐIỂM DANH XÁC NHẬN</span>'));
+      var fileLink = lv.fileUrl ? ('<a href="' + escL(lv.fileUrl) + '" target="_blank" rel="noopener noreferrer" class="btn btn-outline-primary btn-sm py-0 px-2 ms-2"><i class="fas fa-image me-1"></i>Mở ảnh đơn đã nộp</a>') : '';
+      var alertCls = lv.trangThai === 'DA_DUYET' ? 'alert-success' : (lv.trangThai === 'TU_CHOI' ? 'alert-danger' : (lv.trangThai === 'CO_MAT' ? 'alert-info' : 'alert-warning'));
+      exBox.innerHTML =
+        '<div class="alert ' + alertCls + ' py-2 small mb-0">' +
+        '<div>' + stBadge + ' <span class="ms-1">Gửi lúc: <b>' + escL(lv.thoiGianGui) + '</b></span>' + fileLink + '</div>' +
+        (lv.nguoiDuyet ? ('<div class="mt-1">Giảng viên xác nhận: <b>' + escL(lv.nguoiDuyet) + '</b> (' + escL(lv.thoiGianDuyet) + ')' + (lv.ghiChuDuyet ? (' — <b>' + escL(lv.ghiChuDuyet) + '</b>') : '') + '</div>') : '') +
+        (lv.trangThai !== 'DA_DUYET' ? '<div class="mt-1 text-muted">Bạn có thể cập nhật lại lý do &amp; chụp ảnh đơn rõ hơn rồi gửi lại bên dưới.</div>' : '') +
+        '</div>';
+      exBox.style.display = 'block';
+      if (submitBtn) submitBtn.disabled = (lv.trangThai === 'DA_DUYET');
+    } else if (exBox) {
+      exBox.style.display = 'none';
+      exBox.innerHTML = '';
+      if (submitBtn) submitBtn.disabled = false;
+    }
+
+    var mEl = document.getElementById('spLeaveModal');
+    if (mEl && window.bootstrap && bootstrap.Modal) {
+      bootstrap.Modal.getOrCreateInstance(mEl).show();
+    }
+  };
+
+  window.spOnLeaveFilePicked = function(input){
+    var prevBox = document.getElementById('spLvFilePreview');
+    window.__spLeaveFilePayload = null;
+    if (!input || !input.files || !input.files[0]) {
+      if (prevBox) { prevBox.style.display = 'none'; prevBox.innerHTML = ''; }
+      return;
+    }
+    var file = input.files[0];
+    if (file.type === 'application/pdf' || /\.pdf$/i.test(file.name)) {
+      if (file.size > 4.5 * 1024 * 1024) {
+        input.value = '';
+        return Swal.fire('File quá lớn', 'File PDF tối đa 4.5MB. Vui lòng nén nhỏ lại hoặc chụp ảnh!', 'warning');
+      }
+      var rdPdf = new FileReader();
+      rdPdf.onload = function(ev){
+        window.__spLeaveFilePayload = { dataUrl: ev.target.result, fileName: file.name, mimeType: 'application/pdf' };
+        if (prevBox) {
+          prevBox.innerHTML = '<div class="text-primary fw-bold small"><i class="fas fa-file-pdf fa-2x me-2"></i>Đã chọn file PDF: ' + escL(file.name) + ' (' + Math.round(file.size / 1024) + ' KB)</div>';
+          prevBox.style.display = 'block';
+        }
+      };
+      rdPdf.readAsDataURL(file);
+      return;
+    }
+
+    var reader = new FileReader();
+    reader.onload = function(ev){
+      var img = new Image();
+      img.onload = function(){
+        try {
+          var maxDim = 1400;
+          var w = img.width, h = img.height;
+          if (w > maxDim || h > maxDim) {
+            if (w >= h) { h = Math.round(h * maxDim / w); w = maxDim; }
+            else { w = Math.round(w * maxDim / h); h = maxDim; }
+          }
+          var canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          var ctx = canvas.getContext('2d');
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, w, h);
+          ctx.drawImage(img, 0, 0, w, h);
+          var compressed = canvas.toDataURL('image/jpeg', 0.82);
+          window.__spLeaveFilePayload = { dataUrl: compressed, fileName: file.name.replace(/\.[^.]+$/, '.jpg'), mimeType: 'image/jpeg' };
+          if (prevBox) {
+            prevBox.innerHTML = '<img src="' + compressed + '" alt="Xem trước đơn xin phép"><div class="small text-success fw-bold mt-1"><i class="fas fa-check-circle me-1"></i>Ảnh đã sẵn sàng (' + Math.round(compressed.length * 0.75 / 1024) + ' KB)</div>';
+            prevBox.style.display = 'block';
+          }
+        } catch (errC) {
+          window.__spLeaveFilePayload = { dataUrl: ev.target.result, fileName: file.name, mimeType: file.type || 'image/jpeg' };
+          if (prevBox) {
+            prevBox.innerHTML = '<img src="' + ev.target.result + '" alt="Xem trước đơn xin phép">';
+            prevBox.style.display = 'block';
+          }
+        }
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  window.spSubmitLeaveRequestWeb = function(){
+    var t = window.__spCurrentLeaveTarget;
+    if (!t) return;
+    var lyDo = ((document.getElementById('spLvReasonInp') || {}).value || '').trim();
+    if (!lyDo || lyDo.length < 3) {
+      return Swal.fire('Thiếu lý do', 'Vui lòng nhập lý do xin phép nghỉ học!', 'warning');
+    }
+    if (!window.__spLeaveFilePayload || !window.__spLeaveFilePayload.dataUrl) {
+      return Swal.fire('Thiếu ảnh đơn viết tay', 'Sinh viên bắt buộc phải in mẫu đơn của trường, viết tay ký tên và tải ảnh chụp đơn lên trước khi gửi!', 'warning');
+    }
+    var btn = document.getElementById('btnSpSubmitLeave');
+    if (btn) btn.disabled = true;
+    if (typeof showLoading === 'function') showLoading('Đang tải ảnh đơn lên hệ thống...');
+
+    google.script.run
+      .withSuccessHandler(function(res){
+        if (typeof Swal !== 'undefined') Swal.close();
+        if (btn) btn.disabled = false;
+        if (!res || !res.success) {
+          return Swal.fire('Không gửi được', (res && res.message) || 'Lỗi gửi đơn xin phép', 'error');
+        }
+        if (res.item) {
+          var k = res.item.ngayIso + '|' + cleanKeyL(res.item.ca) + '|' + cleanKeyL(res.item.mon);
+          window.__spLeaveMap[k] = res.item;
+        }
+        try { Object.keys(localStorage).forEach(function(lk){ if (lk.indexOf('spc:tkb|') === 0) localStorage.removeItem(lk); }); } catch (eLs) {}
+        var mEl = document.getElementById('spLeaveModal');
+        if (mEl && window.bootstrap && bootstrap.Modal) {
+          try { bootstrap.Modal.getOrCreateInstance(mEl).hide(); } catch (e) {}
+        }
+        if (typeof spDraw === 'function') spDraw();
+        Swal.fire('Đã gửi đơn thành công!', res.message, 'success');
+      })
+      .withFailureHandler(function(err){
+        if (typeof Swal !== 'undefined') Swal.close();
+        if (btn) btn.disabled = false;
+        Swal.fire('Lỗi kết nối', (err && err.message) || 'Không kết nối được máy chủ', 'error');
+      })
+      .submitStudentLeaveRequest({
+        mssv: t.mssv,
+        lopTkb: t.lopTkb,
+        mon: t.mon,
+        ngayIso: t.ngayIso,
+        ca: t.ca,
+        lyDo: lyDo,
+        fileDataUrl: window.__spLeaveFilePayload.dataUrl,
+        fileName: window.__spLeaveFilePayload.fileName,
+        mimeType: window.__spLeaveFilePayload.mimeType
+      });
+  };
+
+  window.spOpenLeaveHistoryModal = function(){
+    var mssv = ((document.getElementById('studentSearchMssvInput') || {}).value || '').replace(/\s+/g, '');
+    if (!mssv) return Swal.fire('Lưu ý', 'Vui lòng nhập MSSV để xem lịch sử đơn xin phép!', 'info');
+    var body = document.getElementById('spLeaveHistoryBody');
+    if (body) body.innerHTML = '<div class="text-center py-4 text-muted"><i class="fas fa-spinner fa-spin me-2"></i>Đang tải danh sách đơn đã gửi...</div>';
+    var mEl = document.getElementById('spLeaveHistoryModal');
+    if (mEl && window.bootstrap && bootstrap.Modal) bootstrap.Modal.getOrCreateInstance(mEl).show();
+
+    google.script.run
+      .withSuccessHandler(function(res){
+        if (!res || !res.success || !res.items || !res.items.length) {
+          if (body) body.innerHTML = '<div class="text-center py-4 text-muted">Bạn chưa gửi đơn xin phép nào.</div>';
+          return;
+        }
+        window.__spLeaveMap = res.byKey || window.__spLeaveMap;
+        if (body) {
+          body.innerHTML = res.items.map(function(it){
+            var badge = it.trangThai === 'DA_DUYET'
+              ? '<span class="badge bg-success">✅ Đã duyệt PHÉP</span>'
+              : (it.trangThai === 'TU_CHOI'
+                ? '<span class="badge bg-danger">❌ Không duyệt (Vắng)</span>'
+                : (it.trangThai === 'CO_MAT'
+                  ? '<span class="badge bg-info text-dark">🟢 Đã đi học (Có mặt)</span>'
+                  : '<span class="badge bg-warning text-dark">⏳ Chờ GV điểm danh</span>'));
+            return '<div class="border rounded p-3 mb-2">' +
+              '<div class="d-flex justify-content-between align-items-start gap-2 flex-wrap">' +
+                '<div><b>' + escL(it.mon) + '</b><div class="small text-primary fw-semibold">' + escL(it.ngayVN) + ' · ' + escL(it.ca) + ' (' + escL(it.lopTkb) + ')</div></div>' +
+                '<div>' + badge + '</div>' +
+              '</div>' +
+              '<div class="small mt-1"><b>Lý do:</b> ' + escL(it.lyDo) + '</div>' +
+              '<div class="small text-muted mt-1">Gửi lúc: ' + escL(it.thoiGianGui) +
+                (it.nguoiDuyet ? (' · GV xác nhận: <b>' + escL(it.nguoiDuyet) + '</b> (' + escL(it.thoiGianDuyet) + ')') : '') +
+                (it.ghiChuDuyet ? (' · <span class="fw-semibold">' + escL(it.ghiChuDuyet) + '</span>') : '') +
+              '</div>' +
+              (it.fileUrl ? ('<div class="mt-2"><a href="' + escL(it.fileUrl) + '" target="_blank" rel="noopener noreferrer" class="btn btn-outline-primary btn-sm py-0 px-2"><i class="fas fa-image me-1"></i>Xem ảnh đơn đã nộp</a></div>') : '') +
+            '</div>';
+          }).join('');
+        }
+      })
+      .withFailureHandler(function(){
+        if (body) body.innerHTML = '<div class="text-center py-3 text-danger">Lỗi tải danh sách đơn!</div>';
+      })
+      .getStudentLeaveRequests(mssv);
+  };
+
+  /* ===== XEM & IN MẪU GỐC 1:1 (KHÔNG LÀM SAI LỆCH MẪU NHÀ TRƯỜNG BAN HÀNH) ===== */
+  function buildLeaveSlipHtml_(){
+    var t = window.__spCurrentLeaveTarget || {};
+    var hintBar = (t && t.mon && t.ngayIso)
+      ? '<div style="margin-top:6px;font-size:12px;color:#1e3a8a">Gợi ý ghi đơn cho buổi đang chọn: <b>' + escL(t.mon) + '</b> — Ngày <b>' + escL(fmtDateVNL(t.ngayIso)) + ' (' + escL(t.ca) + ')</b> (dòng hướng dẫn này sẽ tự ẩn khi in).</div>'
+      : '';
+    var oneSlip =
+      '<div class="slip">' +
+        '<div class="tc" style="font-size:13pt;">CỘNG HOÀ XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>' +
+        '<div class="tc" style="font-size:12.5pt;margin-bottom:8px;">Độc lập – Tự do – Hạnh Phúc</div>' +
+        '<div class="tc" style="font-size:15pt;font-weight:bold;margin:8px 0 10px;">ĐƠN XIN PHÉP NGHỈ HỌC</div>' +
+        '<table class="kg"><tr><td style="width:82px;vertical-align:top;font-weight:bold;">Kính gửi:</td>' +
+          '<td>- Ban giám hiệu trường Cao Đẳng Đại Việt Đà Nẵng<br>- Phòng Đào tạo và CTSV<br>- Giáo viên Bộ môn, Giáo viên chủ nhiệm</td></tr></table>' +
+        '<p>Em tên là:....................................................................................................................................................</p>' +
+        '<p>Học lớp:......................................................................................................................................................</p>' +
+        '<p>Em viết đơn này để xin phép được nghỉ học từ ngày.......................................đến ngày...........................</p>' +
+        '<p>Lý do:..........................................................................................................................................................</p>' +
+        '<p>....................................................................................................................................................................</p>' +
+        '<p>Kính mong các thầy cô xem xét, giúp đỡ em. Em xin hứa sẽ học bài và làm bài đầy đủ.</p>' +
+        '<p>Em xin chân thành cảm ơn!</p>' +
+        '<div class="tr" style="font-style:italic;margin-top:6px;">Đà Nẵng, ngày……tháng…..năm 20…</div>' +
+        '<table class="sig"><tr><td>PHÒNG ĐÀO TẠO</td><td>GVCN</td><td>NGƯỜI VIẾT ĐƠN</td></tr></table>' +
+      '</div>';
+
+    return '<!DOCTYPE html><html lang="vi"><head><meta charset="utf-8"><title>ĐƠN XIN PHÉP NGHỈ HỌC (Mẫu gốc nhà trường)</title>' +
+      '<style>' +
+        '@page{size:A4 portrait;margin:8mm 10mm}' +
+        'body{font-family:"Times New Roman",Times,serif;font-size:12pt;line-height:1.42;color:#000;margin:0;padding:8px;background:#fff}' +
+        '.slip{border:2.2px solid #000;outline:1px solid #000;outline-offset:3px;padding:12px 18px 26px;margin-bottom:14px;page-break-inside:avoid}' +
+        '.tc{text-align:center}.tr{text-align:right}' +
+        '.kg{width:100%;border-collapse:collapse;margin-bottom:6px}.kg td{padding:1px 0;font-size:12pt}' +
+        'p{margin:4px 0}' +
+        '.sig{width:100%;border-collapse:collapse;margin-top:4px;text-align:center;font-weight:bold}.sig td{width:33.3%;padding-bottom:46px}' +
+        '.noprint{text-align:center;margin:0 0 10px;padding:8px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;font-family:sans-serif}' +
+        '.noprint button{padding:7px 14px;border:0;border-radius:6px;background:#2563eb;color:#fff;font-weight:bold;cursor:pointer;margin:0 4px}' +
+        '@media print{.noprint{display:none}}' +
+      '</style></head><body>' +
+      '<div class="noprint"><button onclick="window.print()">🖨️ In mẫu gốc ngay (A4 - 2 phiếu/trang)</button><button style="background:#64748b" onclick="window.close()">Đóng</button>' + hintBar + '</div>' +
+      oneSlip + oneSlip +
+      '</body></html>';
+  }
+
+  // NGUYÊN BẢN PHIẾU ĐĂNG KÝ HỌC LẠI — KHOA CÔNG NGHỆ Ô TÔ (2x2 = 4 PHIẾU / 1 TỜ A4)
+  function buildRetakeFormHtml_(monName, lopDangKy){
+    var hintBar = monName
+      ? '<div style="margin-top:6px;font-size:12px;color:#1e3a8a">Gợi ý ghi vào phiếu: Môn đăng ký học lại: <b>' + escL(monName) + '</b>' + (lopDangKy ? (' · Lớp đăng ký học lại: <b>' + escL(lopDangKy) + '</b>') : '') + ' (dòng này tự ẩn khi in).</div>'
+      : '';
+    var oneCell =
+      '<td>' +
+        '<div class="tc b" style="font-size:10.5pt">TRƯỜNG CAO ĐẲNG ĐẠI VIỆT ĐÀ NẴNG</div>' +
+        '<div class="tc b" style="font-size:10.5pt;margin-bottom:5px">KHOA CÔNG NGHỆ Ô TÔ</div>' +
+        '<div class="tc b" style="font-size:12.5pt;margin:5px 0 9px">PHIẾU ĐĂNG KÝ HỌC LẠI</div>' +
+        '<p>Họ tên: …………………………………………………..</p>' +
+        '<p>Ngày sinh: ………….. Nơi sinh:………………………</p>' +
+        '<p>Lớp: …………… MSSV:………………………………</p>' +
+        '<p>SĐT: …………………………………………………….</p>' +
+        '<p>Môn đăng ký học lại: …………………………………</p>' +
+        '<p>……………………………………………………………</p>' +
+        '<p>……………………………………………………………</p>' +
+        '<p>Lớp đăng ký học lại: …………………………………</p>' +
+        '<div class="tr i" style="margin:8px 0 4px;font-size:10pt">Đà Nẵng, ngày …… tháng …… năm 202…</div>' +
+        '<table class="sig"><tr><td>Xác nhận của Khoa</td><td>Người đăng ký</td></tr></table>' +
+        '<p class="b" style="margin-top:4px;font-size:10.5pt">Số TC: ………………………</p>' +
+        '<p class="b" style="font-size:10.5pt">Số tiền: …………………….</p>' +
+      '</td>';
+
+    return '<!DOCTYPE html><html lang="vi"><head><meta charset="utf-8"><title>PHIẾU ĐĂNG KÝ HỌC LẠI - Khoa Công Nghệ Ô Tô</title>' +
+      '<style>' +
+        '@page{size:A4 portrait;margin:7mm}' +
+        'body{font-family:"Times New Roman",Times,serif;font-size:10.5pt;line-height:1.48;color:#000;margin:0;padding:6px;background:#fff}' +
+        '.sheet{width:100%;border-collapse:collapse;table-layout:fixed;border:1px solid #000}' +
+        '.sheet>tbody>tr>td{width:50%;height:135mm;vertical-align:top;padding:8px 11px;border:1px dashed #000;box-sizing:border-box}' +
+        '.tc{text-align:center}.tr{text-align:right}.b{font-weight:bold}.i{font-style:italic}' +
+        'p{margin:3.5px 0;white-space:nowrap;overflow:hidden}' +
+        '.sig{width:100%;border-collapse:collapse;margin-top:2px;font-weight:bold;text-align:center}.sig td{width:50%;padding-bottom:42px;border:none;font-size:10.5pt}' +
+        '.noprint{text-align:center;margin:0 0 10px;padding:9px 12px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;font-family:sans-serif}' +
+        '.noprint button{padding:7px 14px;border:0;border-radius:6px;background:#2563eb;color:#fff;font-weight:bold;cursor:pointer;margin:0 4px}' +
+        '.cut-note{margin-top:6px;font-size:12.5px;color:#92400e;background:#fffbeb;border:1px solid #fcd34d;border-radius:6px;padding:5px 10px;display:inline-block}' +
+        '@media print{.noprint{display:none}body{padding:0}}' +
+      '</style></head><body>' +
+      '<div class="noprint">' +
+        '<div><button onclick="window.print()">🖨️ In Phiếu Đăng Ký Học Lại (A4 - 4 phiếu/trang)</button><button style="background:#64748b" onclick="window.close()">Đóng</button></div>' +
+        '<div class="cut-note">✂️ <b>Lưu ý:</b> 1 tờ A4 gồm 4 phiếu — <b>sinh viên in và cắt ra 1 phiếu thôi nếu đăng ký 1 môn</b> (sau khi điền gặp trực tiếp Thầy/Cô phụ trách Khoa ký xác nhận).</div>' +
+        hintBar +
+      '</div>' +
+      '<table class="sheet"><tbody><tr>' + oneCell + oneCell + '</tr><tr>' + oneCell + oneCell + '</tr></tbody></table>' +
+      '</body></html>';
+  }
+
+  function openPrintWindow_(htmlStr, fallbackDownloadFn){
+    var w = window.open('', '_blank', 'width=880,height=940');
+    if (w) {
+      w.document.open();
+      w.document.write(htmlStr);
+      w.document.close();
+      setTimeout(function(){ try { w.focus(); } catch (e) {} }, 250);
+    } else {
+      if (typeof fallbackDownloadFn === 'function') fallbackDownloadFn();
+      Swal.fire('Đã tải mẫu gốc', 'Trình duyệt chặn mở cửa sổ in nên hệ thống đã tự tải file mẫu gốc của trường về máy bạn!', 'info');
+    }
+  }
+
+  window.spPrintLeaveForm = function(){
+    openPrintWindow_(buildLeaveSlipHtml_(), window.spDownloadLeaveWord);
+  };
+  window.spDownloadLeaveWord = function(){
+    downloadBase64File_(ORIG_DON_XIN_PHEP_DOC_B64, 'application/msword', 'DON_XIN_PHEP.doc');
+  };
+  window.spPrintRetakeForm = function(monName, lopDangKy){
+    openPrintWindow_(buildRetakeFormHtml_(monName || '', lopDangKy || ''), window.spDownloadRetakeWord);
+  };
+  window.spDownloadRetakeWord = function(){
+    downloadBase64File_(ORIG_PHIEU_HOC_LAI_DOCX_B64, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'Phieu_Dang_Ky_Hoc_Lai_Khoa_CNOT.docx');
+  };
+
+  /* ===== XEM ĐƠN XIN PHÉP CHO GIẢNG VIÊN (ADMIN KHÔNG DUYỆT — GV DUYỆT TỰ ĐỘNG KHI ĐIỂM DANH) ===== */
+  window.refreshStaffLeaveBadge = function(){
+    var btn = document.getElementById('btnStaffLeaveRequests');
+    var b = document.getElementById('staffLeaveBadge');
+    // CHỈ GIẢNG VIÊN MỚI HIỆN NÚT ĐƠN PHÉP (ADMIN KHÔNG XEM/DUYỆT ĐƠN SINH VIÊN)
+    if (typeof currentUser === 'undefined' || !currentUser || typeof userRole === 'undefined' || userRole !== 'GV') {
+      if (btn) { btn.style.display = 'none'; btn.classList.remove('has-pending'); }
+      if (b) { b.style.display = 'none'; b.textContent = '0'; }
+      return;
+    }
+    if (btn) btn.style.display = 'inline-flex';
+    google.script.run
+      .withSuccessHandler(function(res){
+        if (!res || !res.success) return;
+        var n = res.pendingCount || 0;
+        if (b) {
+          b.textContent = n > 99 ? '99+' : String(n);
+          b.style.display = n > 0 ? 'inline-block' : 'none';
+        }
+        if (btn) btn.classList.toggle('has-pending', n > 0);
+      })
+      .getPendingLeaveRequestsForStaff(currentUser, userRole, 'CHO_DUYET');
+  };
+
+  window.openStaffLeaveModal = function(){
+    if (typeof userRole === 'undefined' || userRole !== 'GV') {
+      return Swal.fire('Thông báo', 'Chỉ Giảng viên trực tiếp giảng dạy môn học mới xem và xác nhận đơn xin phép khi điểm danh.', 'info');
+    }
+    var mEl = document.getElementById('staffLeaveModal');
+    if (mEl && window.bootstrap && bootstrap.Modal) bootstrap.Modal.getOrCreateInstance(mEl).show();
+    window.loadStaffLeaveRequests(staffLeaveState.filter || 'CHO_DUYET');
+  };
+
+  window.loadStaffLeaveRequests = function(filter){
+    if (filter) staffLeaveState.filter = filter;
+    var f = staffLeaveState.filter;
+    var mapBtn = {
+      CHO_DUYET: ['btnSlFltPending', 'btn-warning', 'btn-outline-warning'],
+      DA_DUYET: ['btnSlFltApproved', 'btn-success', 'btn-outline-success'],
+      TU_CHOI: ['btnSlFltRejected', 'btn-danger', 'btn-outline-danger'],
+      ALL: ['btnSlFltAll', 'btn-secondary', 'btn-outline-secondary']
+    };
+    Object.keys(mapBtn).forEach(function(k){
+      var el = document.getElementById(mapBtn[k][0]);
+      if (el) el.className = 'btn fw-bold ' + (k === f ? mapBtn[k][1] : mapBtn[k][2]);
+    });
+
+    var body = document.getElementById('staffLeaveListBody');
+    if (body) body.innerHTML = '<div class="text-center py-4 text-muted"><i class="fas fa-spinner fa-spin me-2"></i>Đang tải danh sách đơn xin phép...</div>';
+
+    google.script.run
+      .withSuccessHandler(function(res){
+        if (!res || !res.success) {
+          if (body) body.innerHTML = '<div class="text-center py-3 text-danger">' + escL((res && res.message) || 'Lỗi tải dữ liệu') + '</div>';
+          return;
+        }
+        staffLeaveState.items = res.items || [];
+        var b = document.getElementById('staffLeaveBadge');
+        var btnTop = document.getElementById('btnStaffLeaveRequests');
+        var n = res.pendingCount || 0;
+        if (b) { b.textContent = n > 99 ? '99+' : String(n); b.style.display = n > 0 ? 'inline-block' : 'none'; }
+        if (btnTop) btnTop.classList.toggle('has-pending', n > 0);
+
+        if (!staffLeaveState.items.length) {
+          if (body) body.innerHTML = '<div class="text-center py-4 text-muted">Không có đơn xin phép nào trong mục này.</div>';
+          return;
+        }
+        if (body) {
+          body.innerHTML = staffLeaveState.items.map(function(it, idx){
+            var badge = it.trangThai === 'DA_DUYET'
+              ? '<span class="badge bg-success">✅ Đã duyệt PHÉP</span>'
+              : (it.trangThai === 'TU_CHOI'
+                ? '<span class="badge bg-danger">❌ Không duyệt (Vắng)</span>'
+                : (it.trangThai === 'CO_MAT'
+                  ? '<span class="badge bg-info text-dark">🟢 SV đã Có mặt</span>'
+                  : '<span class="badge bg-warning text-dark">⏳ Chờ điểm danh xác nhận</span>'));
+            return '<div class="border rounded p-3 mb-2 bg-white shadow-sm">' +
+              '<div class="d-flex justify-content-between align-items-start flex-wrap gap-2">' +
+                '<div>' +
+                  '<div class="fw-bold">' + escL(it.hoTen) + ' <span class="text-muted">(' + escL(it.mssv) + ')</span>' + (it.lopGoc ? (' · <span class="badge bg-primary-subtle text-primary">' + escL(it.lopGoc) + '</span>') : '') + '</div>' +
+                  '<div class="small text-primary fw-semibold mt-1"><i class="fas fa-book me-1"></i>' + escL(it.mon) + ' — ' + escL(it.ngayVN) + ' · ' + escL(it.ca) + ' (' + escL(it.lopTkb) + ')</div>' +
+                '</div>' +
+                '<div>' + badge + '</div>' +
+              '</div>' +
+              '<div class="small mt-2"><b>Lý do:</b> ' + escL(it.lyDo) + '</div>' +
+              '<div class="small text-muted mt-1">Gửi lúc: ' + escL(it.thoiGianGui) +
+                (it.nguoiDuyet ? (' · Xác nhận khi điểm danh: <b>' + escL(it.nguoiDuyet) + '</b> (' + escL(it.thoiGianDuyet) + ')' + (it.ghiChuDuyet ? (' — ' + escL(it.ghiChuDuyet)) : '')) : '') +
+              '</div>' +
+              '<div class="d-flex flex-wrap gap-2 mt-2 align-items-center">' +
+                '<button type="button" class="btn btn-outline-primary btn-sm fw-bold" onclick="staffViewLeaveAttachment(' + idx + ')"><i class="fas fa-image me-1"></i>Xem ảnh đơn viết tay</button>' +
+                '<button type="button" class="btn btn-primary btn-sm fw-bold" onclick="gvJumpToAttendanceForLeave(' + idx + ')"><i class="fas fa-clipboard-check me-1"></i>Mở Điểm danh buổi này</button>' +
+              '</div>' +
+            '</div>';
+          }).join('');
+        }
+      })
+      .withFailureHandler(function(err){
+        if (body) body.innerHTML = '<div class="text-center py-3 text-danger">' + escL((err && err.message) || 'Lỗi kết nối') + '</div>';
+      })
+      .getPendingLeaveRequestsForStaff(currentUser, userRole, f);
+  };
+
+  // Nhảy thẳng từ thông báo đơn phép sang đúng lớp & buổi học trong bảng Điểm danh
+  window.gvJumpToAttendanceForLeave = function(idx){
+    var it = staffLeaveState.items[idx];
+    if (!it) return;
+    var mEl = document.getElementById('staffLeaveModal');
+    if (mEl && window.bootstrap && bootstrap.Modal) {
+      try { bootstrap.Modal.getOrCreateInstance(mEl).hide(); } catch (e) {}
+    }
+    if (typeof switchTab === 'function') switchTab('A');
+    var sel = document.getElementById('selPhanCong');
+    if (!sel) return;
+    var targetVal = (it.assignLop && it.assignMon) ? (it.assignLop + '|' + it.assignMon) : '';
+    var picked = false;
+    for (var i = 0; i < sel.options.length; i++) {
+      var v = sel.options[i].value || '';
+      if ((targetVal && v === targetVal) || (!targetVal && cleanKeyL(v).indexOf(cleanKeyL(it.mon)) !== -1)) {
+        sel.selectedIndex = i;
+        picked = true;
+        break;
+      }
+    }
+    if (picked && typeof triggerFetchData === 'function') {
+      var targetSessKey = it.ngayIso + '|' + it.ca;
+      triggerFetchData();
+      var tries = 0;
+      var iv = setInterval(function(){
+        tries++;
+        var hSel = document.getElementById('historyDates');
+        if (hSel && hSel.options.length > 0) {
+          for (var j = 0; j < hSel.options.length; j++) {
+            if (cleanKeyL(hSel.options[j].value) === cleanKeyL(targetSessKey)) {
+              hSel.selectedIndex = j;
+              if (typeof syncHistory === 'function') syncHistory();
+              clearInterval(iv);
+              return;
+            }
+          }
+        }
+        if (tries > 25) clearInterval(iv);
+      }, 250);
+    }
+  };
+
+  window.staffViewLeaveAttachment = function(idx){
+    var it = staffLeaveState.items[idx];
+    if (!it) return;
+    window.showLeaveReviewPopup(it, false);
+  };
+
+  window.staffFocusAndViewLeave = function(mssv){
+    var row = document.querySelector('tr.atd-row[data-mssv="' + mssv + '"]');
+    if (row) {
+      row.classList.remove('v8-hide');
+      try { row.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) {}
+    }
+    window.staffViewAttendanceLeave(mssv);
+  };
+
+  window.staffViewAttendanceLeave = function(mssv){
+    if (typeof rawStudents === 'undefined' || !Array.isArray(rawStudents)) return;
+    var st = rawStudents.find(function(s){ return String(s.mssv) === String(mssv); });
+    if (!st || !st.leaveReq) return;
+    var lv = Object.assign({}, st.leaveReq, {
+      mssv: st.mssv,
+      hoTen: (st.ho || '') + ' ' + (st.ten || ''),
+      lopGoc: st.lopGoc || ''
+    });
+    window.showLeaveReviewPopup(lv, true);
+  };
+
+  // Khi GV chọn "Phép" hoặc "Vắng" từ popup xem đơn -> tích trực tiếp vào bảng Điểm danh (lưu điểm danh sẽ tự duyệt/không duyệt!)
+  window.applyLeaveDecisionToAttendanceRow = function(mssv, targetStatus){
+    var row = document.querySelector('tr.atd-row[data-mssv="' + mssv + '"]');
+    if (!row) return;
+    var radio = row.querySelector('input.btn-check[value="' + targetStatus + '"]');
+    if (radio) {
+      radio.checked = true;
+      radio.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    if (typeof rawStudents !== 'undefined' && Array.isArray(rawStudents)) {
+      var st = rawStudents.find(function(s){ return String(s.mssv) === String(mssv); });
+      if (st) st.status = targetStatus;
+    }
+    try { row.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) {}
+    Swal.fire({
+      toast: true,
+      position: 'top-end',
+      icon: targetStatus === 'Phép' ? 'success' : 'warning',
+      title: targetStatus === 'Phép'
+        ? 'Đã chọn "Phép" — bấm GHI NHẬN ĐIỂM DANH để lưu & tự động duyệt đơn!'
+        : 'Đã chọn "Vắng" — bấm GHI NHẬN ĐIỂM DANH để lưu (không duyệt phép)!',
+      showConfirmButton: false,
+      timer: 3200
+    });
+  };
+
+  window.showLeaveReviewPopup = function(it, fromAttendance){
+    var prevUrl = drivePreviewUrl_(it.fileUrl);
+    var isPdf = /\.pdf$/i.test(it.fileName || '');
+    var mediaHtml = isPdf
+      ? '<div class="alert alert-info py-2 small"><i class="fas fa-file-pdf me-1"></i>Đơn định dạng PDF — bấm nút bên dưới để mở xem trực tiếp.</div>'
+      : '<div class="mb-2"><img src="' + escL(prevUrl) + '" style="max-width:100%;max-height:380px;border-radius:10px;border:1px solid #cbd5e1;" onerror="this.style.display=\'none\'"></div>';
+    var openLink = it.fileUrl
+      ? '<div class="mb-2"><a href="' + escL(it.fileUrl) + '" target="_blank" rel="noopener noreferrer" class="btn btn-outline-primary btn-sm fw-bold"><i class="fas fa-external-link-alt me-1"></i>Mở ảnh/file gốc trên Google Drive</a></div>'
+      : '';
+    var isGvInAttendance = !!(fromAttendance && typeof userRole !== 'undefined' && userRole === 'GV');
+    var ruleNote = isGvInAttendance
+      ? '<div class="small text-muted mt-1"><i class="fas fa-info-circle text-primary me-1"></i>Chọn <b>Phép</b> rồi bấm <b>Ghi nhận điểm danh</b> → đơn tự động được duyệt. Chọn <b>Vắng</b> → không duyệt.</div>'
+      : '';
+    Swal.fire({
+      title: 'ĐƠN XIN PHÉP — ' + escL(it.hoTen || it.mssv),
+      html: '<div class="text-start small mb-2 p-2 rounded bg-light border">' +
+              '<div><b>MSSV:</b> ' + escL(it.mssv) + (it.lopGoc ? (' · <b>Lớp:</b> ' + escL(it.lopGoc)) : '') + '</div>' +
+              '<div><b>Lý do:</b> ' + escL(it.lyDo) + '</div>' +
+              '<div><b>Gửi lúc:</b> ' + escL(it.thoiGianGui) + '</div>' +
+            '</div>' + mediaHtml + openLink + ruleNote,
+      width: 680,
+      showConfirmButton: isGvInAttendance,
+      confirmButtonText: '✅ Chọn "Phép" (sẽ duyệt khi lưu)',
+      confirmButtonColor: '#d97706',
+      showDenyButton: isGvInAttendance,
+      denyButtonText: '❌ Chọn "Vắng" (không duyệt)',
+      denyButtonColor: '#dc2626',
+      showCancelButton: true,
+      cancelButtonText: 'Đóng'
+    }).then(function(r){
+      if (isGvInAttendance && r.isConfirmed) {
+        window.applyLeaveDecisionToAttendanceRow(it.mssv, 'Phép');
+      } else if (isGvInAttendance && r.isDenied) {
+        window.applyLeaveDecisionToAttendanceRow(it.mssv, 'Vắng');
+      }
+    });
+  };
+
+  // Tự động kiểm tra badge đơn xin phép chờ duyệt ngay sau khi GV đăng nhập (ADMIN ẩn hoàn toàn)
+  var _prevApplyRoleR9 = window.applyUserRoleLogic;
+  if (typeof _prevApplyRoleR9 === 'function') {
+    window.applyUserRoleLogic = function(role){
+      var ret = _prevApplyRoleR9.apply(this, arguments);
+      var btn = document.getElementById('btnStaffLeaveRequests');
+      if (btn) btn.style.display = (role === 'GV') ? 'inline-flex' : 'none';
+      if (role === 'GV') {
+        setTimeout(function(){ window.refreshStaffLeaveBadge(); }, 250);
+      } else {
+        var b = document.getElementById('staffLeaveBadge');
+        if (b) { b.style.display = 'none'; b.textContent = '0'; }
+        if (btn) btn.classList.remove('has-pending');
+      }
+      return ret;
+    };
+  }
+  var _prevLogoutR9 = window.doLogout;
+  if (typeof _prevLogoutR9 === 'function') {
+    window.doLogout = function(){
+      var btn = document.getElementById('btnStaffLeaveRequests');
+      if (btn) { btn.style.display = 'none'; btn.classList.remove('has-pending'); }
+      var b = document.getElementById('staffLeaveBadge');
+      if (b) { b.style.display = 'none'; b.textContent = '0'; }
+      return _prevLogoutR9.apply(this, arguments);
+    };
+  }
+  if (typeof currentUser !== 'undefined' && currentUser && typeof userRole !== 'undefined' && userRole === 'GV') {
+    setTimeout(function(){ window.refreshStaffLeaveBadge(); }, 300);
+  }
+})();
+</script>
+
+<!-- MODAL BÁO ĐỘNG & ĐIỀN PHÒNG HỌC HÀNG LOẠT -->
+<div class="modal fade" id="missingRoomsModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+      <div class="modal-header text-white" style="background: linear-gradient(135deg, #dc2626, #ea580c); border-radius: 16px 16px 0 0;">
+        <div>
+          <h5 class="modal-title fw-bold mb-0"><i class="fas fa-door-open me-2"></i>Cảnh báo &amp; Điền Phòng Học Hàng Loạt</h5>
+          <small class="opacity-90">Tự động quét các buổi học chưa điền phòng · Chống trùng phòng cùng Ngày &amp; Ca khi lưu</small>
+        </div>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
+      </div>
+      <div class="modal-body p-3">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+          <div class="btn-group btn-group-sm" role="group">
+            <button type="button" class="btn btn-danger fw-bold" id="btnMrScopeWeek" onclick="loadMissingRoomsModalData(false)">
+              <i class="fas fa-calendar-week me-1"></i>Tuần đang xem
+            </button>
+            <button type="button" class="btn btn-outline-danger fw-bold" id="btnMrScopeAll" onclick="loadMissingRoomsModalData(true)">
+              <i class="fas fa-calendar-alt me-1"></i>Tất cả các tuần sắp tới
+            </button>
+          </div>
+          <div class="input-group input-group-sm" style="max-width: 340px;">
+            <span class="input-group-text bg-light fw-bold">Điền nhanh:</span>
+            <input type="text" id="mrQuickFillRoomInp" class="form-control" placeholder="VD: P.203 hoặc Xưởng 1">
+            <button type="button" class="btn btn-outline-primary fw-bold" onclick="mrApplyQuickFillRoom()">Áp dụng ô trống</button>
+          </div>
+        </div>
+        <div id="mrSummaryBar" class="mb-2"></div>
+        <div class="table-responsive border rounded" style="max-height: 52vh;">
+          <table class="table table-sm table-hover align-middle mb-0" style="font-size: 0.84rem;">
+            <thead class="table-light sticky-top">
+              <tr>
+                <th style="width: 120px;">Ngày / Thứ</th>
+                <th style="width: 108px;">Ca</th>
+                <th>Môn học &amp; Lớp / Nhóm</th>
+                <th style="width: 170px;">Giảng viên</th>
+                <th style="width: 175px;">Nhập Phòng học</th>
+                <th style="width: 75px;" class="text-center">Tuần</th>
+              </tr>
+            </thead>
+            <tbody id="mrTableBody">
+              <tr><td colspan="6" class="text-center py-4 text-muted">Đang quét danh sách buổi chưa điền phòng...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer bg-light d-flex justify-content-between align-items-center">
+        <span class="small text-muted"><i class="fas fa-shield-alt text-success me-1"></i>Hệ thống tự kiểm tra trùng phòng trước khi lưu.</span>
+        <div class="d-flex gap-2">
+          <button type="button" class="btn btn-secondary btn-sm px-3" data-bs-dismiss="modal">Đóng</button>
+          <button type="button" class="btn btn-danger btn-sm fw-bold px-4" id="btnMrSaveBulk" onclick="saveMissingRoomsBulkWeb()">
+            <i class="fas fa-save me-1"></i>Lưu tất cả phòng đã nhập
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===== BÁO ĐỘNG & ĐIỀN PHÒNG HỌC CHƯA XẾP (CHỐNG SÓT PHÒNG 100%) ===== */
+(function(){
+  var mrState = { items: [], scanAll: false, onlyMissingFilter: false, currentWeekMissing: [] };
+
+  function escM(s){
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+
+  window.isUnassignedRoomGlobal = function(phong){
+    if (phong === null || phong === undefined) return true;
+    var s = String(phong).replace(/\s+/g, ' ').trim().toUpperCase();
+    if (!s) return true;
+    var tokens = [
+      'CHƯA XẾP', 'CHUA XEP', 'CHƯA XẾP PHÒNG', 'CHUA XEP PHONG',
+      'CHƯA ĐIỀN PHÒNG', 'CHUA DIEN PHONG', 'CHƯA CÓ PHÒNG', 'CHUA CO PHONG',
+      'CHƯA CÓ', 'CHUA CO', 'CHƯA PHÒNG', 'CHUA PHONG', 'CHƯA', 'CHUA',
+      'TRỐNG', 'TRONG', 'NONE', 'NULL', 'TBD', '-', '?', 'N/A'
+    ];
+    return tokens.indexOf(s) !== -1;
+  };
+
+  window.getWeekMissingRoomItems = function(){
+    return (mrState.currentWeekMissing || []).slice();
+  };
+
+  window.updateMissingRoomsAlertUI = function(timetable, weekIso){
+    var list = Array.isArray(timetable) ? timetable : [];
+    var missing = list.filter(function(it){ return window.isUnassignedRoomGlobal(it.phong); });
+    mrState.currentWeekMissing = missing;
+
+    var btn = document.getElementById('btnMissingRoomsAlert');
+    var banner = document.getElementById('tkbMissingRoomBanner');
+    var tbl = document.getElementById('adminMatrixTableHtml');
+
+    if (btn) {
+      if (missing.length > 0) {
+        btn.className = 'btn btn-danger btn-sm fw-bold has-room-alert';
+        btn.innerHTML = '<i class="fas fa-bell me-1"></i> Thiếu phòng (' + missing.length + ')';
+      } else {
+        btn.className = 'btn btn-outline-success btn-sm fw-bold';
+        btn.innerHTML = '<i class="fas fa-check-circle me-1"></i> Đủ phòng tuần này';
+      }
+    }
+
+    if (missing.length === 0) {
+      mrState.onlyMissingFilter = false;
+      if (tbl) tbl.classList.remove('tkb-only-missing');
+      if (banner) { banner.style.display = 'none'; banner.innerHTML = ''; }
+      return;
+    }
+
+    if (tbl) tbl.classList.toggle('tkb-only-missing', !!mrState.onlyMissingFilter);
+
+    if (banner) {
+      var sampleTxt = missing.slice(0, 3).map(function(m){
+        var dVN = String(m.ngayIso || '').split('-').reverse().slice(0, 2).join('/');
+        return dVN + ' ' + m.ca + ' (' + m.lop + ')';
+      }).join(' · ');
+      if (missing.length > 3) sampleTxt += ' … (+' + (missing.length - 3) + ' buổi khác)';
+      banner.innerHTML =
+        '<div class="tmb-left">' +
+          '<i class="fas fa-exclamation-triangle"></i>' +
+          '<div>' +
+            '<div class="tmb-title">BÁO ĐỘNG: Tuần này có ' + missing.length + ' buổi học CHƯA ĐIỀN PHÒNG HỌC!</div>' +
+            '<div class="tmb-sub">' + escM(sampleTxt) + ' — Nhấp trực tiếp vào thẻ đỏ hoặc bấm Điền phòng nhanh hàng loạt.</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="tmb-actions">' +
+          '<button type="button" class="tmb-btn tmb-btn-main" onclick="openMissingRoomsModal(false)"><i class="fas fa-bolt"></i> Điền phòng nhanh (' + missing.length + ')</button>' +
+          '<button type="button" class="tmb-btn tmb-btn-sub' + (mrState.onlyMissingFilter ? ' active' : '') + '" id="btnToggleOnlyMissing" onclick="toggleFilterOnlyMissingRooms()"><i class="fas fa-filter"></i> ' + (mrState.onlyMissingFilter ? 'Đang lọc buổi thiếu phòng' : 'Chỉ nổi bật buổi thiếu phòng') + '</button>' +
+        '</div>';
+      banner.style.display = 'flex';
+    }
+  };
+
+  window.toggleFilterOnlyMissingRooms = function(){
+    mrState.onlyMissingFilter = !mrState.onlyMissingFilter;
+    var tbl = document.getElementById('adminMatrixTableHtml');
+    if (tbl) tbl.classList.toggle('tkb-only-missing', mrState.onlyMissingFilter);
+    var b = document.getElementById('btnToggleOnlyMissing');
+    if (b) {
+      b.classList.toggle('active', mrState.onlyMissingFilter);
+      b.innerHTML = '<i class="fas fa-filter"></i> ' + (mrState.onlyMissingFilter ? 'Đang lọc buổi thiếu phòng' : 'Chỉ nổi bật buổi thiếu phòng');
+    }
+  };
+
+  window.openMissingRoomsModal = function(scanAllUpcoming){
+    if (typeof Swal !== 'undefined' && Swal.isVisible && Swal.isVisible()) Swal.close();
+    var stsEl = document.getElementById('smartTeacherScheduleModal');
+    if (stsEl && stsEl.classList.contains('show') && window.bootstrap && bootstrap.Modal) {
+      try { bootstrap.Modal.getOrCreateInstance(stsEl).hide(); } catch (e) {}
+    }
+    var modalEl = document.getElementById('missingRoomsModal');
+    if (modalEl && window.bootstrap && bootstrap.Modal) {
+      bootstrap.Modal.getOrCreateInstance(modalEl).show();
+    }
+    window.loadMissingRoomsModalData(!!scanAllUpcoming);
+  };
+
+  window.loadMissingRoomsModalData = function(scanAllUpcoming){
+    mrState.scanAll = !!scanAllUpcoming;
+    var bW = document.getElementById('btnMrScopeWeek');
+    var bA = document.getElementById('btnMrScopeAll');
+    if (bW && bA) {
+      bW.className = mrState.scanAll ? 'btn btn-outline-danger fw-bold' : 'btn btn-danger fw-bold';
+      bA.className = mrState.scanAll ? 'btn btn-danger fw-bold' : 'btn btn-outline-danger fw-bold';
+    }
+    var tbody = document.getElementById('mrTableBody');
+    var sumBar = document.getElementById('mrSummaryBar');
+    if (sumBar) sumBar.innerHTML = '';
+    if (tbody) tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted"><i class="fas fa-spinner fa-spin me-2"></i>Đang quét các buổi chưa điền phòng...</td></tr>';
+
+    var weekStr = (document.getElementById('adminWeekInput') || {}).value || '';
+    google.script.run
+      .withSuccessHandler(function(res){
+        if (!res || !res.success) {
+          if (tbody) tbody.innerHTML = '<tr><td colspan="6" class="text-center py-3 text-danger">' + escM((res && res.message) || 'Lỗi quét dữ liệu') + '</td></tr>';
+          return;
+        }
+        mrState.items = Array.isArray(res.data) ? res.data : [];
+        if (mrState.items.length === 0) {
+          if (sumBar) sumBar.innerHTML = '<div class="alert alert-success py-2 small fw-bold mb-0"><i class="fas fa-check-circle me-1"></i>Tuyệt vời! ' + (mrState.scanAll ? 'Tất cả các tuần sắp tới đều đã điền đủ phòng học.' : 'Tuần đang xem đã điền đủ phòng học 100%!') + '</div>';
+          if (tbody) tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-success fw-bold">Không còn buổi học nào thiếu phòng.</td></tr>';
+          var svBtn = document.getElementById('btnMrSaveBulk');
+          if (svBtn) svBtn.disabled = true;
+          return;
+        }
+        if (sumBar) {
+          sumBar.innerHTML = '<div class="alert alert-danger py-2 small fw-bold mb-0"><i class="fas fa-bell me-1"></i>Phát hiện <b>' + mrState.items.length + '</b> buổi học ' + (mrState.scanAll ? 'sắp tới ' : 'trong tuần này ') + 'chưa điền phòng. Hãy nhập phòng rồi bấm <b>Lưu tất cả phòng đã nhập</b>.</div>';
+        }
+        var svBtn2 = document.getElementById('btnMrSaveBulk');
+        if (svBtn2) svBtn2.disabled = false;
+        if (tbody) {
+          tbody.innerHTML = mrState.items.map(function(it, idx){
+            var examTag = it.isExam ? '<span class="badge bg-danger me-1">THI</span>' : '';
+            return '<tr>' +
+              '<td><b>' + escM(it.ngayVN) + '</b><div class="small text-muted">' + escM(it.thu || '') + '</div></td>' +
+              '<td class="text-nowrap"><span class="badge bg-primary-subtle text-primary text-nowrap">' + escM(it.ca) + '</span></td>' +
+              '<td>' + examTag + '<b>' + escM(it.mon) + '</b><div class="small text-secondary">' + escM(it.lop) + '</div></td>' +
+              '<td class="small">' + escM(it.gvName || it.gvId) + '</td>' +
+              '<td><input type="text" class="form-control form-control-sm mr-room-inp border-danger" data-idx="' + idx + '" placeholder="Nhập phòng..." oninput="this.classList.toggle(\'border-danger\', !this.value.trim()); this.classList.toggle(\'border-success\', !!this.value.trim());"></td>' +
+              '<td class="text-center"><button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2" title="Nhảy tới tuần chứa buổi này" onclick="mrJumpToWeek(\'' + escM(it.weekMonday || '') + '\')"><i class="fas fa-external-link-alt"></i></button></td>' +
+            '</tr>';
+          }).join('');
+        }
+      })
+      .withFailureHandler(function(err){
+        if (tbody) tbody.innerHTML = '<tr><td colspan="6" class="text-center py-3 text-danger">' + escM((err && err.message) || 'Lỗi kết nối') + '</td></tr>';
+      })
+      .getMissingRoomsReport(weekStr, mrState.scanAll);
+  };
+
+  window.mrApplyQuickFillRoom = function(){
+    var v = ((document.getElementById('mrQuickFillRoomInp') || {}).value || '').trim();
+    if (!v) return;
+    document.querySelectorAll('.mr-room-inp').forEach(function(inp){
+      if (!inp.value.trim()) {
+        inp.value = v;
+        inp.classList.remove('border-danger');
+        inp.classList.add('border-success');
+      }
+    });
+  };
+
+  window.mrJumpToWeek = function(mondayIso){
+    if (!mondayIso) return;
+    var wInp = document.getElementById('adminWeekInput');
+    if (wInp) wInp.value = mondayIso;
+    var modalEl = document.getElementById('missingRoomsModal');
+    if (modalEl && window.bootstrap && bootstrap.Modal) {
+      try { bootstrap.Modal.getOrCreateInstance(modalEl).hide(); } catch (e) {}
+    }
+    if (typeof loadAdminTimetableMatrix === 'function') loadAdminTimetableMatrix();
+  };
+
+  window.saveMissingRoomsBulkWeb = function(){
+    var updates = [];
+    document.querySelectorAll('.mr-room-inp').forEach(function(inp){
+      var val = (inp.value || '').trim();
+      if (!val || window.isUnassignedRoomGlobal(val)) return;
+      var idx = parseInt(inp.getAttribute('data-idx'), 10);
+      var it = mrState.items[idx];
+      if (!it) return;
+      updates.push({
+        rowIdx: it.rowIdx,
+        ngayIso: it.ngayIso,
+        ca: it.ca,
+        lop: it.lop,
+        mon: it.mon,
+        newPhong: val
+      });
+    });
+    if (!updates.length) {
+      return Swal.fire('Lưu ý', 'Bạn chưa nhập tên phòng học nào vào các ô bên trên!', 'warning');
+    }
+    if (typeof showLoading === 'function') showLoading('Đang kiểm tra trùng phòng & lưu hàng loạt...');
+    google.script.run
+      .withSuccessHandler(function(res){
+        if (typeof Swal !== 'undefined') Swal.close();
+        if (!res || !res.success) {
+          return Swal.fire('Lỗi', (res && res.message) || 'Không lưu được phòng học', 'error');
+        }
+        window.__stsBundleStale = true;
+        var hasErr = Array.isArray(res.errors) && res.errors.length > 0;
+        var htmlMsg = '<div class="text-start small">';
+        if (res.updatedCount > 0) {
+          htmlMsg += '<div class="alert alert-success py-2 mb-2 fw-bold"><i class="fas fa-check-circle me-1"></i>Đã điền phòng thành công cho <b>' + res.updatedCount + '</b> buổi học!</div>';
+        }
+        if (hasErr) {
+          htmlMsg += '<div class="alert alert-danger py-2 mb-0"><b>Các dòng bị chặn do trùng phòng / lỗi (' + res.errors.length + '):</b><br>• ' + res.errors.map(escM).join('<br>• ') + '</div>';
+        }
+        htmlMsg += '</div>';
+        Swal.fire({
+          title: hasErr ? 'Cập nhật xong (có phòng bị trùng)' : 'Đã điền phòng thành công!',
+          html: htmlMsg,
+          icon: hasErr ? 'warning' : 'success'
+        });
+        if (typeof loadAdminTimetableMatrix === 'function') loadAdminTimetableMatrix();
+        window.loadMissingRoomsModalData(mrState.scanAll);
+      })
+      .withFailureHandler(function(err){
+        if (typeof Swal !== 'undefined') Swal.close();
+        Swal.fire('Lỗi', (err && err.message) || 'Lỗi kết nối', 'error');
+      })
+      .quickAssignRoomsBulk(updates);
+  };
+
+  window.buildMissingRoomsSwalHtml = function(missingList){
+    if (!Array.isArray(missingList) || missingList.length === 0) return '';
+    return '<div class="alert alert-danger text-start small mt-2 mb-0" style="border:1.5px solid #ef4444;">' +
+      '<div class="fw-bold mb-1"><i class="fas fa-bell me-1"></i>BÁO ĐỘNG: Có <b>' + missingList.length + '</b> buổi vừa xếp CHƯA ĐIỀN PHÒNG HỌC!</div>' +
+      missingList.slice(0, 5).map(function(m){
+        return '• ' + escM((m.ngayVN || m.ngayIso || '') + ' · ' + (m.ca || '') + ' — ' + (m.lop || '') + ' — ' + (m.mon || ''));
+      }).join('<br>') +
+      (missingList.length > 5 ? ('<br><i>… và ' + (missingList.length - 5) + ' buổi khác</i>') : '') +
+      '<div class="mt-2"><button type="button" class="btn btn-danger btn-sm fw-bold" onclick="openMissingRoomsModal(false)"><i class="fas fa-bolt me-1"></i>Điền phòng ngay bây giờ</button></div>' +
+    '</div>';
+  };
+})();
+</script>
+
 </body>
 </html>
